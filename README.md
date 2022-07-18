@@ -11,6 +11,6 @@ $ ln -s ../helios/helios.js helios.js
 
 Host static files locally (default port 8000)
 ```
-$ npm install -g local-http-server
+$ sudo npm install -g local-http-server
 $ ws
 ```

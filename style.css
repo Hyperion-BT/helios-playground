@@ -1,0 +1,46 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+#paste-capture-area {
+    caret-color: transparent;
+    z-index: -500;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    position: fixed;
+}
+
+.text-input {
+    cursor: text;
+}
+
+span {
+    position: relative;
+    display: inline-block;
+}
+
+span.cursor {
+    position: relative;
+    content: " ";
+    width: 0;
+    bottom: 0px;
+    height: 100%;
+}
+
+span.cursor::after {
+    position: absolute;
+    content: " ";
+    background-color: red;
+    height: 100%;
+    width: 2px;
+    left: -1px;
+    z-index: 10;
+}
+
+span.selection {
+    color: white;
+    background-color: rgb(115, 139, 221);
+    z-index: 9;
+}
