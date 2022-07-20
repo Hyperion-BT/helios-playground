@@ -1,19 +1,160 @@
 * {
     padding: 0;
     margin: 0;
+    font-size: 16px;
 }
 
-#paste-capture-area {
-    caret-color: transparent;
-    z-index: -500;
-    width: 0;
-    height: 0;
-    overflow: hidden;
+body {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    column-gap: 10px;
+    row-gap: 10px;
+    height: calc(100vh - 20px);
+    width: calc(100vw - 20px);
+    font-family: sans;
+    margin: 10px;
+}
+
+#measured-text {
     position: fixed;
+    top: -500px;
+    font-family: monospace;
+    z-index: -500;
+}
+
+#ref-editor {
+    z-index: -500;
+    grid-column-start: 4;
+    grid-column-end: 13;
+    grid-row-start: 1;
+    grid-row-end: 13;
+    opacity: 0;
+}
+
+#root {
+    grid-column-start: 1;
+    grid-column-end: 13;
+    grid-row-start: 1;
+    grid-row-end: 13;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+#app {
+    grid-column-start: 1;
+    grid-column-end: 13;
+    grid-row-start: 1;
+    grid-row-end: 13;
+
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+nav {
+    display: flex;
+    flex-direction: column;
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 13;
+    border-right: 1px solid #ddd;
+}
+
+.nav-link {
+    color: grey;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.nav-link:hover {
+    color: black;
+}
+
+#tab-page {
+    grid-column-start: 2;
+    grid-column-end: 13;
+    grid-row-start: 1;
+    grid-row-end: 13;
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    column-gap: 10px;
+    row-gap: 10px;
+}
+
+#editor {
+    grid-column-start: 3;
+    grid-column-end: 12;
+    grid-row-start: 1;
+    grid-row-end: 13;
 }
 
 .text-input {
     cursor: text;
+    display: grid;
+    grid-template-columns: 1fr 16px;
+    grid-template-rows: 1fr 16px;
+    border: 1px solid #ddd;
+    font-family: monospace;
+}
+
+.text-input .tl {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    overflow: hidden;
+}
+
+.text-input .tr {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    display: block;
+    background-color: white;
+}
+
+.text-input .bl {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 2;
+    grid-row-end: 3;
+    display: block;
+    background-color: white;
+}
+
+.text-input .br {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 2;
+    grid-row-end: 3;
+}
+
+.right-scrollbar {
+    position: relative;
+    display: block;
+    background-color: grey;
+    width: 16px;
+    cursor: pointer;
+}
+
+.bottom-scrollbar {
+    position: relative;
+    display: block;
+    background-color: grey;
+    height: 16px;
+    cursor: pointer;
 }
 
 span {
@@ -21,15 +162,19 @@ span {
     display: inline-block;
 }
 
-span.cursor {
+span.line-number {
+    background-color: black;
+    color: white;
+}
+
+span#caret {
     position: relative;
-    content: " ";
-    width: 0;
+    width: 0px;
     bottom: 0px;
     height: 100%;
 }
 
-span.cursor::after {
+span#caret[visible]::after {
     position: absolute;
     content: " ";
     background-color: red;
