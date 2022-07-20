@@ -167,48 +167,6 @@ class Caret extends Component {
         return mkElem(Caret, {now: (new Date()).getTime()})
     }
 
-    scrollIntoView() {
-        if (this.lastScrollIntoViewTime != null && this.lastScrollIntoViewTime == this.props.now) {
-            return;
-        }
-
-        let caret = document.getElementById("caret");
-
-        if (caret != null && caret != undefined) {
-
-            let parent = caret.parentElement;
-            while (parent.className != "text-input") {
-                parent = parent.parentElement;
-            }
-
-            let parentRect = parent.getBoundingClientRect();
-            let caretRect = caret.getBoundingClientRect();
-
-            console.log(parentRect, caretRect);
-
-            let dx = 0;
-            let dy = 0;
-            if (caretRect.x < parentRect.x) {
-                dx = parentRect.x - caretRect.x;
-            } else if (caretRect.x > parentRect.x + parentRect.width - caretRect.width) {
-                dx = parentRect.x + parentRect.width - caretRect.width - caretRect.x;
-            }
-
-            if (caretRect.y < parentRect.y) {
-                dy = parentRect.y - caretRect.y;
-            } else if (caretRect.y + caretRect.height > parentRect.y + parentRect.height) {
-                dy = parentRect.y + parentRect.height - caretRect.y - caretRect.height;
-            }
-
-            if (dx != 0 || dy != 0) {
-                console.log(dx, dy, parent);
-                parent.scroll(-Math.ceil(dx), -Math.ceil(dy));
-            }
-        }
-
-        this.lastScrollIntoViewTime = this.props.now;
-    }
-
     componentDidMount() {
         this.timerId = setInterval(() => {
             this.tick();
@@ -298,11 +256,13 @@ class TextInput extends Focusable {
     constructor(props) {
         super(props);
 
-        this.state.lines = ["line\xA01", "line\xA02", "line\xA03"];
+        this.state.lastSave = this.props.initLines;
+        this.state.lines = this.props.initLines.replaceAll(" ", "\xA0").replaceAll("\t", TAB).split("\n");
         this.state.pos0 = new Pos(0, 0);
         this.state.pos1 = new Pos(0, 0);
         this.state.xOffset = 0;
         this.state.yOffset = 0;
+        this.state.someChange = false;
 
         this.isSelecting = false;
         this.history = [];
@@ -355,6 +315,16 @@ class TextInput extends Focusable {
         } else {
             return this.pos0;
         }
+    }
+
+    static getDerivedStateFromProps(props, state) {
+        if (state.lastSave != props.initLines) {
+            state = Object.assign({}, state);
+            state.lastSave = props.initLines;
+            state.lines =  props.initLines.replaceAll(" ", "\xA0").replaceAll("\t", TAB).split("\n");
+        } 
+
+        return state;
     }
 
     pushHistory(lines, pos) {
@@ -449,6 +419,7 @@ class TextInput extends Focusable {
         if (lines != null) {
             this.pushHistory(this.lines, this.pos1);
             state.lines = lines;
+            state.someChange = true;
         }
 
         if (pos0 != null) {
@@ -946,9 +917,7 @@ class TextInput extends Focusable {
         super.handleMouseDown(e);
     }
 
-    handleWheel(e) {
-        //console.log(e);
-        
+    handleWheel(e) {        
         let dx = 0;
         let dy = 0;
 
@@ -1216,46 +1185,144 @@ class TextInput extends Focusable {
             );
         });
 
-        return mkElem(
-            "div", 
-            Object.assign({
-                id: this.props.id,
-                style: {fontFamily: "monospace", userSelect: "none"},
-                className: "text-input",
-                onKeyPress: this.handleKeyPress,
-                onKeyDown: this.handleKeyDown,
-                onWheel: this.handleWheel,
-            }, this.commonProps), 
-            mkElem("div", {className: "tl"}, ...lineElems),
-            mkElem("div", {className: "tr"}, 
-                mkElem("div", {
-                    className: "right-scrollbar", 
-                    onMouseDown: this.handleRightScrollbarMouseDown,
-                    style: {
-                        height: this.rightScrollBarHeight().toString() + "px",
-                        top: (-this.state.yOffset*this.refHeight()/this.lines.length).toString() + "px",
-                    }
-                })
-            ),
-            mkElem("div", {className: "bl"},
-                mkElem("div", {
-                    className: "bottom-scrollbar", 
-                    onMouseDown: this.handleBottomScrollbarMouseDown,
-                    style: {
-                        left: (-this.state.xOffset*this.refWidth()/this.maxLineChars()).toString() + "px",
-                        width: this.bottomScrollBarWidth().toString() .toString() + "px",
-                    }
-                })
-            ),
-            mkElem("div", {className: "br"})
+        return [
+            this.props.onSave != undefined && this.state.someChange && mkElem("button", {key: "save", className: "save", onClick: () => {this.handleSave()}}, "Save"),
+            mkElem(
+                "div", 
+                Object.assign({
+                    id: this.props.id,
+                    key: "editor",
+                    style: {fontFamily: "monospace", userSelect: "none"},
+                    className: "text-input",
+                    onKeyPress: this.handleKeyPress,
+                    onKeyDown: this.handleKeyDown,
+                    onWheel: this.handleWheel,
+                }, this.commonProps), 
+                mkElem("div", {className: "tl"}, ...lineElems),
+                mkElem("div", {className: "tr"}, 
+                    mkElem("div", {
+                        className: "right-scrollbar", 
+                        onMouseDown: this.handleRightScrollbarMouseDown,
+                        style: {
+                            height: this.rightScrollBarHeight().toString() + "px",
+                            top: (-this.state.yOffset*this.refHeight()/this.lines.length).toString() + "px",
+                        }
+                    })
+                ),
+                mkElem("div", {className: "bl"},
+                    mkElem("div", {
+                        className: "bottom-scrollbar", 
+                        onMouseDown: this.handleBottomScrollbarMouseDown,
+                        style: {
+                            left: (-this.state.xOffset*this.refWidth()/this.maxLineChars()).toString() + "px",
+                            width: this.bottomScrollBarWidth().toString() .toString() + "px",
+                        }
+                    })
+                ),
+                mkElem("div", {className: "br"})
+            )
+        ];
+    }
+
+    handleSave() {
+        let data = this.lines.join("\n").replaceAll("\xA0", " ");
+        this.props.onSave(data);
+
+        this.setState({someChange: false, lastSave: data});
+    }
+}
+
+class EditTab extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state.activeScript = -1;
+        this.state.scripts = new Map(); // id => script
+        // read all scripts from indexedDB
+    }
+
+    componentDidMount() {
+        this.syncWithDB();
+    }
+
+    syncWithDB() {
+        let transaction = this.props.db.transaction(["scripts"], "readonly");
+        let store = transaction.objectStore("scripts");
+
+        let request = store.openCursor();
+
+        let all = new Map();
+        request.onsuccess = (e)  => {
+            let cursor = e.target.result;
+
+            if (cursor != null) {
+                all.set(cursor.key, cursor.value);
+
+                cursor.continue();
+            } else {
+                this.setState({scripts: all});
+            }
+        }
+    }
+
+    showScript(key) {
+        this.setState({activeScript: key});
+    }
+
+    addScript() {
+        // add to db immediately
+        let transaction = this.props.db.transaction(["scripts"], "readwrite");
+        let store = transaction.objectStore("scripts");
+
+        let request = store.add({name: "untitled", data: "test untitled;"});
+        request.onsuccess = (e) => {
+            this.setState({activeScript: e.target.result});
+            this.syncWithDB();
+        }
+    }
+ 
+    saveActiveScript(data) {
+        let transaction = this.props.db.transaction(["scripts"], "readwrite");
+        let store = transaction.objectStore("scripts");
+
+        let name = helios.getName(data);
+        let obj = {name: name, data: data};
+        void store.put(obj, this.state.activeScript);
+
+        let newScripts = new Map();
+        for (let pair of this.state.scripts) {
+            newScripts.set(pair[0], pair[1]);
+        }
+        newScripts.set(this.state.activeScript, obj);
+
+        this.setState({scripts: newScripts});
+    }
+
+    render() {
+        let allScripts = [];
+        this.state.scripts.forEach((value, key) => {
+            allScripts.push(mkElem("p", {className: "script-link", key: key, onClick: () => this.showScript(key)}, value.name));
+        });
+
+        return mkElem("div", {id: "edit-tab"},
+            mkElem("button", {className: "new-script", onClick: () => this.addScript()}, "New"),
+            mkElem("div", {className: "all-scripts"}, ...allScripts),
+            this.state.activeScript != -1 && this.state.scripts.has(this.state.activeScript) && mkElem(TextInput, {
+                initLines: this.state.scripts.get(this.state.activeScript).data,
+                id: "editor", 
+                refHeightElement: "ref-editor", 
+                refWidthElement: "ref-editor",
+                onSave: (data) => {this.saveActiveScript(data)}
+            }),
         );
     }
-  }
+}
 
-
+// props.db contains the indexeddb
 class App extends Component {
     constructor(props) {
         super(props);
+
         this.state.index = 0;
     }
 
@@ -1268,7 +1335,7 @@ class App extends Component {
 
         switch(this.state.index) {
             case 0:
-                inner = mkElem(TextInput, {id: "editor", refHeightElement: "ref-editor", refWidthElement: "ref-editor"});
+                inner = mkElem(EditTab, {db: this.props.db});
                 break;
             case 1:
                 inner = mkElem("p", null, "Tab 2");
@@ -1285,4 +1352,32 @@ class App extends Component {
     }
 }
 
-root.render(mkElem(App, null));
+function openDb() {
+    return new Promise(function(resolve, reject) {
+        const dbVersion = 1;
+
+        let request = indexedDB.open("helios-playground", dbVersion);
+
+        request.onerror = function(e) {
+            reject(e);
+        }
+
+        request.onsuccess = function(e) {
+            resolve(e.target.result);
+        }
+
+        request.onupgradeneeded = function(e) {
+            let db = e.target.result;
+
+            // create the tables
+            if (e.oldVersion < 1) {
+                db.createObjectStore("scripts", {autoIncrement: true});
+                console.log("done creating helios-playground database");
+            }
+        }
+    });
+}
+
+openDb().then((db) => {
+    root.render(mkElem(App, {db: db}));
+});
