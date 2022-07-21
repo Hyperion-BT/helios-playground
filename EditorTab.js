@@ -29,7 +29,9 @@ export class EditorTab extends Component {
     } 
 
     handleSave(raw) {
-        void this.data.saveActiveFile(raw);
+        this.data.saveActiveFile(raw).then(() => {
+            this.setState({});
+        });
     }
 
     render() {
@@ -37,12 +39,26 @@ export class EditorTab extends Component {
 
         let fileList = [];
         files.forEach((fileData, key) => {
+            let name = fileData.name;
+            let nameError = null;
+            let caption;
+            if (name == "") {
+                nameError = "empty";
+                caption = "empty";
+            } else if (name == null) {
+                nameError = "invalid-header";
+                caption = "invalid header";
+            } else {
+                caption = name;
+            }
+
             let li = ce("li", null, ce("button", {
                 key: key,
                 className: "file-link",
+                status: status,
                 active: (key == this.data.active ? "" : null),
                 onClick: () => {this.handleClickFileLink(key)},
-            }, fileData.name));
+            }, caption));
 
             fileList.push(li);
         });

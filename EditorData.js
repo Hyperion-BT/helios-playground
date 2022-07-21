@@ -55,7 +55,7 @@ export class EditorData {
         // next open files that aren't yet opened
         for (let [key, file] of files) {
             if (!this.files_.has(key)) {
-                newFiles.set(key, FileData.new(file.name, file.data));
+                newFiles.set(key, FileData.new(file.data));
             }
         }
 
@@ -106,7 +106,7 @@ export class EditorData {
     }
 
     saveActiveFile(raw) {
-        this.db_.setFile(this.active_, this.files_.get(this.active_).name, raw);
+        return this.db_.setFile(this.active_, raw);
     }
 
     get isActiveDirty() {

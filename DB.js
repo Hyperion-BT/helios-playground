@@ -87,7 +87,7 @@ export class DB {
                 let transaction = this.idb_.transaction(["files"], "readwrite");
                 let store = transaction.objectStore("files");
 
-                let obj = {name: "untitled", data: "test untitled;"};
+                let obj = {data: ""};
                 let request = store.add(obj);
 
                 request.onerror = (e) => {
@@ -110,13 +110,14 @@ export class DB {
     }
 
     // returns Promise<void>
-    setFile(key, name, data) {
+    setFile(key, data) {
         return new Promise(
             (resolve, reject) => {        
                 let transaction = this.idb_.transaction(["files"], "readwrite");
                 let store = transaction.objectStore("files");
 
-                let obj = {name: name, data: data};
+                let obj = {data: data};
+                console.log(obj);
                 let request = store.put(obj, key);
 
                 request.onerror = (e) => {

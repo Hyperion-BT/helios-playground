@@ -142,7 +142,6 @@ export class FileEditor extends Component {
         let x = Math.floor((e.clientX - x0)/charWidth);
         let y = Math.floor((e.clientY - y0)/lineHeight);    
         
-        //console.log(x, y, this.data.viewPos.x, this.data.viewPos.y, x - this.data.viewPos.x, y - this.data.viewPos.y);
         return (new FilePos(x, y)).add(this.data.viewPos);
     }
 
@@ -186,7 +185,7 @@ export class FileEditor extends Component {
             this.setState({
                 isSelecting: true,
                 curMousePos: new Vec(e.clientX, e.clientY),
-                fileContentElement: findElement(e.currentTarget, (e_ => {console.log(e_); return e_.className == "file-content"})),
+                fileContentElement: findElement(e.currentTarget, (e_ => e_.className == "file-content")),
                 outOfBoundsTimer: setInterval(() => {
                     if (this.state.isSelecting && (this.state.curMousePos != null) && (this.state.fileContentElement != null)) {
                         let rect = this.state.fileContentElement.getBoundingClientRect();
@@ -444,12 +443,12 @@ export class FileEditor extends Component {
                 e.stopPropagation();
                 break;
             case "ArrowDown":
-                data = data.moveCaretBy(0, 1, true, e.shiftKey);
+                data = data.moveCaretBy(0, 1, false, e.shiftKey);
                 e.preventDefault();
                 e.stopPropagation();
                 break;
             case "ArrowUp":
-                data = data.moveCaretBy(0, -1, true, e.shiftKey);
+                data = data.moveCaretBy(0, -1, false, e.shiftKey);
                 e.preventDefault();
                 e.stopPropagation();
                 break;
@@ -534,11 +533,7 @@ export class FileEditor extends Component {
     }
 
     renderLineNumber(lineNo) {
-        return ce("span", {className: "line-number", style: { 
-            top: (-this.data.viewPos.y*this.lineHeight).toString() + "px",
-            position: "relative",
-            width: "max-content"
-        }}, lineNo);
+        return ce("span", {className: "line-number"}, lineNo);
     }
 
     renderLine(text, xCaret, xSelStart, xSelEnd) {
@@ -607,12 +602,7 @@ export class FileEditor extends Component {
             throw new Error("unhandled");
         }
 
-        return ce("p", {style: {
-            left: (-this.data.viewPos.x*this.charWidth).toString() + "px", 
-            top: (-this.data.viewPos.y*this.lineHeight).toString() + "px",
-            position: "relative", 
-            width: "max-content"
-        }}, ...inner);
+        return ce("p", null, ...inner);
     }
 
     render() {
@@ -623,20 +613,26 @@ export class FileEditor extends Component {
         let nDigits = this.nLineNumberDigits;
 
         // TODO: only show lines in view
-        let lineNoElems = this.data.lines_.map((_, y) => {
-            let lineNo = SPACE + formatPaddedInt(y + 1, nDigits) + SPACE;
+        let lineNumbers = [];
+        let contentLines = [];
 
-            return this.renderLineNumber(lineNo);
-        });
+        let y0 = this.data.viewPos.y;
 
-        let lineElems = this.data.lines_.map((line, y) => {
-            return this.renderLine(
-                line,
-                caretPos.y == y ? caretPos.x : null, 
-                selStart.y == y ? selStart.x : (y > selStart.y && y < selEnd.y ? 0 : null),
-                selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null)
+        for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + this.scrollbarSize)/this.lineHeight), this.data.nLines); y++) {
+            let lineNumber = SPACE + formatPaddedInt(y + 1, nDigits) + SPACE;
+
+            lineNumbers.push(this.renderLineNumber(lineNumber));
+
+            let line = this.data.lines_[y];
+            contentLines.push(
+                this.renderLine(
+                    line,
+                    caretPos.y == y ? caretPos.x : null, 
+                    selStart.y == y ? selStart.x : (y > selStart.y && y < selEnd.y ? 0 : null),
+                    selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null)
+                )
             );
-        });
+        }
 
         return [
             (this.props.onSave != null) && ce("button", {key: "save", id: "save-file", onClick: () => {this.handleSave()}}, "Save"),
@@ -653,12 +649,13 @@ export class FileEditor extends Component {
                     onWheel: this.handleWheel,
                     style: {fontFamily: "monospace", userSelect: "none"},
                 }, 
-                ce("div", {className: "line-number-column", style: {width: this.lineNumberColumnWidth.toString() + "px"}}, ...lineNoElems),
+                ce("div", {className: "line-number-column", style: {width: this.lineNumberColumnWidth.toString() + "px"}}, ...lineNumbers),
                 ce("div", {className: "bottom-left-corner"}),
                 ce("div", {
                     className: "file-content",
+                    style: {left: (-this.data.viewPos.x*this.charWidth).toString() + "px"},
                     onMouseDown: this.handleMouseDown,
-                }, ...lineElems),
+                }, ...contentLines),
                 ce("div", {className: "hor-scrollbar", onMouseDown: this.handleHorScrollbarTrackMouseDown},
                     this.hasHorOverflow && ce("div", {
                         className: "hor-scrollbar-thumb", 

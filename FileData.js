@@ -1,14 +1,14 @@
+import * as helios from "./helios.js";
 import {SPACE, TAB, assert, stringToLines, linesToString, trimSpaces, isWordChar, Vec, FilePos} from "./util.js";
 
 const MAX_HIST = 100;
 
 export class FileData {
-    constructor(name, lines, selPos0, selPos1, viewPos, history, histIdx, histHead) {
+    constructor(lines, selPos0, selPos1, viewPos, history, histIdx, histHead) {
         assert(!selPos0.isNaN());
         assert(!selPos1.isNaN());
         assert(!viewPos.isNaN());
 
-        this.name_    = name;
         this.lines_   = lines;
         this.selPos0_ = selPos0; 
         this.selPos1_ = selPos1; // if selPos0 == selPos1 then nothing is selected, selPos1 is the cursor position
@@ -19,7 +19,7 @@ export class FileData {
         this.histHead_ = histHead; 
     }
 
-    static new(name, raw) {
+    static new(raw) {
         let lines = stringToLines(raw);
         let selPos0 = new FilePos(0, 0);
         let selPos1 = new FilePos(0, 0);
@@ -28,15 +28,28 @@ export class FileData {
         let histIdx = 0;
         let histHead = null;
 
-        return new FileData(name, lines, selPos0, selPos1, viewPos, history, histIdx, histHead);
-    }
-
-    get name() {
-        return this.name_;
+        return new FileData(lines, selPos0, selPos1, viewPos, history, histIdx, histHead);
     }
 
     get raw() {
         return linesToString(this.lines_);
+    }
+
+    // returns empty string if file is technically empty
+    get name() {
+        let raw = this.raw.trim();
+
+        if (raw.length == 0) {
+            return "";
+        } else {
+            let pair = helios.extractScriptPurposeAndName(raw);
+
+            if (pair == null) {
+                return null;
+            } else {
+                return pair[1];
+            }
+        }
     }
 
     get lines() {
@@ -188,10 +201,9 @@ export class FileData {
     moveCaretTo(x, y, isSelecting = false) {
         assert(arguments.length < 4);
 
-        let newPos = new FilePos(x, y);
+        let newPos = (new FilePos(x, y)).bound(this.lines_, false);
 
         return new FileData(
-            this.name_,
             this.lines_,
             isSelecting ? this.selPos0_ : newPos,
             newPos,
@@ -209,7 +221,6 @@ export class FileData {
         newPos = newPos.bound(this.lines_, wrap);
 
         return new FileData(
-            this.name_,
             this.lines_,
             isSelecting ? this.selPos0_ : newPos,
             newPos,
@@ -226,7 +237,6 @@ export class FileData {
         let newPos1 = new FilePos(this.lines_[nLines-1].length, this.lines_.length-1);
 
         return new FileData(
-            this.name_,
             this.lines_,
             newPos0,
             newPos1,
@@ -240,7 +250,6 @@ export class FileData {
     // doesn't mutate, returns a new FileData
     setViewPos(p) {
         return new FileData(
-            this.name_,
             this.lines_,
             this.selPos0_,
             this.selPos1_,
@@ -275,7 +284,6 @@ export class FileData {
         }
 
         return new FileData(
-            this.name_,
             this.lines_,
             this.selPos0_,
             this.selPos1_,
@@ -301,7 +309,6 @@ export class FileData {
         histIdx = history.length;
 
         return new FileData(
-            this.name_,
             this.lines_, 
             this.selPos0_, 
             this.selPos1_, 
@@ -328,7 +335,6 @@ export class FileData {
             let [newLines, newPos] = this.history_[histIdx];
 
             return new FileData(
-                this.name_,
                 newLines, 
                 newPos, 
                 newPos, 
@@ -362,7 +368,6 @@ export class FileData {
             }
 
             return new FileData(
-                this.name_,
                 newLines, 
                 newPos, 
                 newPos, 
@@ -396,7 +401,6 @@ export class FileData {
             }
 
             return new FileData(
-                this.name_,
                 newLines, 
                 newPos, 
                 newPos, 
@@ -436,7 +440,6 @@ export class FileData {
             let that = this.pushHistory(oldLines, p);
 
             return new FileData(
-                this.name_,
                 newLines, 
                 p, 
                 p, 
@@ -475,7 +478,6 @@ export class FileData {
 
             let that = this.pushHistory(oldLines, p);
             return new FileData(
-                this.name_, 
                 newLines, 
                 newPos, 
                 newPos, 
@@ -516,7 +518,6 @@ export class FileData {
         that = that.pushHistory(this.lines_, this.caretPos);
 
         return new FileData(
-            this.name_, 
             newLines, 
             newPos, 
             newPos, 
@@ -548,7 +549,6 @@ export class FileData {
         let that = this.pushBoundary(oldLines, this.caretPos);
 
         return new FileData(
-            this.name_,
             newLines, 
             newPos0, 
             newPos1, 
@@ -591,7 +591,6 @@ export class FileData {
         let that = this.pushHistory(oldLines, this.caretPos);
 
         return new FileData(
-            this.name_,
             newLines, 
             newPos0, 
             newPos1, 

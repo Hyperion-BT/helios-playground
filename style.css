@@ -77,6 +77,10 @@ body {
     user-select: none;
 }
 
+.file-link[name-error] {
+    font-style: italic;
+}
+
 .tab-link:hover {
     color: black;
 }
@@ -148,6 +152,7 @@ button#new-file {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    z-index: 2;
 }
 
 .file-editor .bottom-left-corner {
@@ -165,7 +170,9 @@ button#new-file {
     grid-column-end: 4;
     grid-row-start: 1;
     grid-row-end: 3;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
+    z-index: 0;
 }
 
 .file-editor .hor-scrollbar {
@@ -224,19 +231,25 @@ button#new-file {
     display: inline-block;
 }
 
-.file-editor span.line-number {
+.file-editor .line-number-column .line-number {
+    width: max-content;
     background-color: black;
     color: white;
 }
 
-.file-editor span#caret {
+.file-editor .file-content p {
+    position: relative;
+    width: max-content;
+}
+
+.file-editor .file-content span#caret {
     position: relative;
     width: 0px;
     bottom: 0px;
     height: 100%;
 }
 
-.file-editor span#caret[visible]::after {
+.file-editor .file-content span#caret[visible]::after {
     position: absolute;
     content: " ";
     background-color: red;
@@ -246,7 +259,7 @@ button#new-file {
     z-index: 10;
 }
 
-.file-editor span.selection {
+.file-editor .file-content span.selection {
     color: white;
     background-color: rgb(115, 139, 221);
     z-index: 9;
