@@ -46,7 +46,7 @@ export class EditorTab extends Component {
 
             fileList.push(li);
         });
-
+        
         return ce("div", {id: "editor-tab"},
             ce("button", {id: "new-file", onClick: () => {this.handleClickNewFile()}}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),
@@ -59,7 +59,7 @@ export class EditorTab extends Component {
                 onMouseGrab: this.props.onMouseGrab,
                 onKeyboardGrab: this.props.onKeyboardGrab,
                 onChange: (data) => {this.handleFileEditorChange(data)},
-                onSave: (raw) => {this.handleSave(raw)}
+                onSave: (this.data.isActiveDirty ? (raw) => {this.handleSave(raw)} : null),
             }),
         );
     }

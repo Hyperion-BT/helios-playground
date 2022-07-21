@@ -524,11 +524,13 @@ export class FileEditor extends Component {
     }
 
     handleSave() {
-        let raw = this.data.raw;
+        if (this.props.onSave != undefined && this.props.onSave != null) {
+            let raw = this.data.raw;
 
-        this.props.onSave(raw);
+            this.props.onSave(raw);
 
-        this.setState({});
+            this.setState({});
+        }
     }
 
     renderLineNumber(lineNo) {
@@ -637,7 +639,7 @@ export class FileEditor extends Component {
         });
 
         return [
-            ce("button", {key: "save", id: "save-file", onClick: () => {this.handleSave()}}, "Save"),
+            (this.props.onSave != null) && ce("button", {key: "save", id: "save-file", onClick: () => {this.handleSave()}}, "Save"),
             ce(
                 "div", {
                     key: "editor",

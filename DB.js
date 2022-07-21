@@ -71,7 +71,7 @@ export class DB {
     }
 
     // callback is used when cache isn't up-to-date
-    getFilesSync(callback) {
+    getFilesSync(callback = () => {}) {
         if (!this.filesCache_.isUpToDate(this.nonce_)) {
             this.getFiles().then(callback);
         }

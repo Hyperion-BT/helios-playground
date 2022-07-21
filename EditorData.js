@@ -108,4 +108,18 @@ export class EditorData {
     saveActiveFile(raw) {
         this.db_.setFile(this.active_, this.files_.get(this.active_).name, raw);
     }
+
+    get isActiveDirty() {
+        if (this.active_ != null) {
+        let files = this.db_.getFilesSync();
+
+        if (files.has(this.active_) && this.files_.has(this.active_)) {
+            return files.get(this.active_).data != this.files_.get(this.active_).raw;
+        } else {
+            return false;
+        }
+        } else {
+            return false;
+        }
+    }
 }
