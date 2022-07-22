@@ -324,8 +324,8 @@ export class FileData {
     }
 
     scrollCaretToCenter(nVisibleChars, nVisibleLines) {
-        let x = this.caretPos.x - nVisibleChars/2;
-        let y = this.caretPos.y - nVisibleLines/2;
+        let x = this.caretPos.x - Math.floor(nVisibleChars/2);
+        let y = this.caretPos.y - Math.floor(nVisibleLines/2);
 
         return this.setViewPos(new FilePos(x, y)).boundViewPos(nVisibleChars, nVisibleLines);
     }

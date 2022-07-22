@@ -92,14 +92,18 @@ export class TextViewer extends Component {
         return Math.floor(innerWidth/charWidth);
     }
 
-    static scrollErrorToCenter(data, error, sizer) {
+    static scrollCaretToCenter(data, sizer) {
         assertClass(data, FileData);
         let nLines = data.nLines;
 
         let nVisibleChars = TextViewer.estimateNumVisibleChars(nLines, sizer);
         let nVisibleLines = TextViewer.estimateNumVisibleLines(sizer);
         
-        return data.setError(error).scrollCaretToCenter(nVisibleChars, nVisibleLines);
+        return data.scrollCaretToCenter(nVisibleChars, nVisibleLines);
+    }
+
+    static scrollErrorToCenter(data, error, sizer) {
+        return TextViewer.scrollCaretToCenter(data.setError(error), sizer);
     }
 
     // one extra char to accomodate caret at end-of-line
@@ -283,6 +287,11 @@ export class TextViewer extends Component {
         }
     }
 
+    renderCaret() {
+        console.log("rendering caret:");
+        return Caret.new(this.props.pulsatingCaret != null);
+    }
+
     renderLineNumber(lineNo) {
         return ce("span", {key: lineNo, className: "line-number"}, lineNo);
     }
@@ -292,6 +301,8 @@ export class TextViewer extends Component {
 
         let nDigits = this.nLineNumberDigits;
         let y0 = this.data.viewPos.y;
+
+        assert(y0%1.0 == 0);
 
         for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + SCROLLBAR_SIZE)/this.lineHeight), this.data.nLines); y++) {
             let lineNumber = SPACE + formatPaddedInt(y + 1, nDigits) + SPACE;
@@ -304,8 +315,6 @@ export class TextViewer extends Component {
 
     renderContentLine(y, text, xCaret, xSelStart, xSelEnd) {
         let inner;
-
-        let caretVisible = this.isGrabbingKeyboard;
 
         if (xCaret == null) {
             if (xSelStart == null && xSelEnd == null) {
@@ -335,47 +344,47 @@ export class TextViewer extends Component {
         } else if (xSelStart == null && xSelEnd == null) {
             inner = [
                 ce("span", null, text.slice(0, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", null, text.slice(xCaret)),
             ];
         } else if (xCaret == xSelStart && (xSelEnd == null || xSelEnd == text.length)) {
             inner = [
                 ce("span", null, text.slice(0, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", {className: "selection"}, text.slice(xCaret)),
             ];
         } else if (xCaret == xSelStart && xSelEnd != null) {
             inner = [
                 ce("span", null, text.slice(0, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", {className: "selection"}, text.slice(xCaret, xSelEnd)),
                 ce("span", null, text.slice(xSelEnd)),
             ];
         } else if (xCaret == xSelEnd && (xSelStart == null || xSelStart == 0)) {
             inner = [
                 ce("span", {className: "selection"}, text.slice(0, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", null, text.slice(xCaret)),
             ];
         } else if (xCaret == xSelEnd && xSelStart != null) {
             inner = [
                 ce("span", null, text.slice(0, xSelStart)),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", null, text.slice(xCaret)),
             ];
         } else if (xCaret < xSelEnd && xCaret > xSelStart) {
             inner = [
                 ce("span", null, text.slice(0, xSelStart)),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", {className: "selection"}, text.slice(xCaret, xSelEnd)),
                 ce("span", null, text.slice(xSelEnd)),
             ];
         } else if (xCaret < xSelStart) {
             inner = [
                 ce("span", null, text.slice(0, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", null, text.slice(xCaret, xSelStart)),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
                 ce("span", null, text.slice(xSelEnd)),
@@ -385,7 +394,7 @@ export class TextViewer extends Component {
                 ce("span", null, text.slice(0, xSelStart)),                
                 ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
                 ce("span", null, text.slice(xSelEnd, xCaret)),
-                caretVisible && Caret.new(),
+                this.renderCaret(),
                 ce("span", null, text.slice(xCaret)),
             ];
         } else {
@@ -409,6 +418,7 @@ export class TextViewer extends Component {
 
         let contentLines = [];
 
+        let caretVisible = this.isGrabbingKeyboard || (this.props.caretVisible !== undefined && this.props.caretVisible !== null);
         let y0 = this.data.viewPos.y;
 
         for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + SCROLLBAR_SIZE)/this.lineHeight), this.data.nLines); y++) {
@@ -418,7 +428,7 @@ export class TextViewer extends Component {
                 this.renderContentLine(
                     y,
                     line,
-                    caretPos.y == y ? caretPos.x : null, 
+                    (caretPos.y == y && caretVisible) ? caretPos.x : null, 
                     selStart.y == y ? selStart.x : (y > selStart.y && y < selEnd.y ? 0 : null),
                     selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null),
                 )

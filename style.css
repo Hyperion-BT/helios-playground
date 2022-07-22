@@ -382,6 +382,15 @@ button#new-file {
     grid-row-end: 13;
 }
 
+#debugger-tab #ir-debugger .file-content span#caret {
+    position: relative;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 5px;
+}
+
 #debugger-tab #error-debugger {
     grid-column-start: 1;
     grid-column-end: 12;
@@ -405,6 +414,13 @@ button#new-file {
 #debugger-tab button#run {
     grid-column-start: 9;
     grid-column-end: 10;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+#debugger-tab button#step {
+    grid-column-start: 10;
+    grid-column-end: 11;
     grid-row-start: 1;
     grid-row-end: 2;
 }

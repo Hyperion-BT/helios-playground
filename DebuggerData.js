@@ -1,14 +1,17 @@
 import * as helios from "./helios.js";
+import {assert} from "./util.js";
 import {FileData} from "./FileData.js";
 import {FileViewerData} from "./FileViewerData.js";
+import {TextViewer} from "./TextViewer.js";
 
 const DebuggerStatus = {
     Idle: 0,
     Running: 1,
+	Stepping: 2,
 };
 
 export class DebuggerData extends FileViewerData {
-    constructor(db, files, active, error, ir, program, status, console, stack) {
+    constructor(db, files, active, error, ir, program, status, console, stack, waiter) {
         super(db, files, active);
         
         this.error_   = error; // compilation errors come here
@@ -16,7 +19,9 @@ export class DebuggerData extends FileViewerData {
         this.program_ = program;
         this.status_  = status;
         this.console_ = console;
+		assert(stack instanceof Array);
         this.stack_   = stack;
+		this.waiter_  = waiter;
     }
 
     static new(db) {
@@ -30,6 +35,7 @@ export class DebuggerData extends FileViewerData {
             DebuggerStatus.Idle, 
             [], 
             [],
+			null,
         );
     }
 
@@ -45,9 +51,17 @@ export class DebuggerData extends FileViewerData {
         return this.program_;
     }
 
+	get isIdle() {
+		return this.status_ == DebuggerStatus.Idle;
+	}
+
     get isRunning() {
         return this.status_ == DebuggerStatus.Running;
     }
+
+	get isStepping() {
+		return this.status_ == DebuggerStatus.Stepping;
+	}
 
     get console() {
         return this.console_.slice();
@@ -56,6 +70,10 @@ export class DebuggerData extends FileViewerData {
     get stack() {
         return this.stack_.slice();
     }
+
+	get waiter() {
+		return this.waiter_;
+	}
 
     isSynced(dbFiles) {
         if (!super.isSynced(dbFiles)) {
@@ -92,6 +110,7 @@ export class DebuggerData extends FileViewerData {
                 DebuggerStatus.Idle,
                 [],
                 [],
+				null,
             );
         } else {
             return new DebuggerData(
@@ -104,6 +123,7 @@ export class DebuggerData extends FileViewerData {
                 this.status_,
                 this.console_,
                 this.stack_,
+				this.waiter_,
             );
         }
     }
@@ -122,6 +142,7 @@ export class DebuggerData extends FileViewerData {
                 DebuggerStatus.Idle,
                 [],
                 [],
+				null,
             );
         } else {
             // compile the program
@@ -141,6 +162,7 @@ export class DebuggerData extends FileViewerData {
                     DebuggerStatus.Idle,
                     [],
                     [],
+					null,
                 );
             } catch(e) {
                 if (!(e instanceof helios.UserError)) {
@@ -159,6 +181,7 @@ export class DebuggerData extends FileViewerData {
                     DebuggerStatus.Idle,
                     [],
                     [],
+					null,
                 )).setActiveFileData(fileData);
             }
         }
@@ -178,6 +201,7 @@ export class DebuggerData extends FileViewerData {
             this.status_,
             this.console_,
             this.stack_,
+			this.waiter_,
         );
     }
 
@@ -192,6 +216,7 @@ export class DebuggerData extends FileViewerData {
             this.status_,
             this.console_,
             this.stack_,
+			this.waiter_,
         );
     }
 
@@ -206,10 +231,26 @@ export class DebuggerData extends FileViewerData {
             DebuggerStatus.Running,
             [], // clear console and stack
             [],
+			null,
         );
     }
 
-    endRun() {
+	startStep() {
+        return new DebuggerData(
+            this.db_,
+            this.files_,
+            this.active_,
+            this.error_,
+            this.ir_,
+            this.program_,
+            DebuggerStatus.Stepping,
+            [], // clear console and stack
+            [],
+			null,
+        );
+	}
+
+    setIdle() {
         return new DebuggerData(
             this.db_,
             this.files_,
@@ -219,7 +260,8 @@ export class DebuggerData extends FileViewerData {
             this.program_,
             DebuggerStatus.Idle,
             this.console_,
-            this.status_,
+            this.stack_,
+			null,
         );
     }
 
@@ -237,14 +279,12 @@ export class DebuggerData extends FileViewerData {
             this.status_,
             console,
             this.stack_,
+			this.waiter_,
         );
     }
 
     // input pair: [name, helios.PlutusCoreValue]
-    pushStackVariable(pair) {
-        let stack = this.stack;
-        stack.push(pair);
-
+    setStack(pairs) {
         return new DebuggerData(
             this.db_,
             this.files_,
@@ -254,7 +294,30 @@ export class DebuggerData extends FileViewerData {
             this.program_,
             this.status_,
             this.console_,
-            stack,
+            pairs,
+			this.waiter_,
         );
     }
+
+	setWaiter(site, waiter) {
+        let [x, y] = site.getFilePos();
+
+        console.log("moving caret to", x, y);
+        let irData = this.ir_.moveCaretTo(x, y);
+        irData = TextViewer.scrollCaretToCenter(irData, "ir-debugger-sizer");
+
+		// TODO: use the site
+		return new DebuggerData(
+			this.db_,
+			this.files_,
+			this.active_,
+			this.error_,
+			irData,
+			this.program_,
+			this.status_,
+			this.console_,
+			this.stack_,
+			waiter,
+		);
+	}
 }

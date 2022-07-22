@@ -11,6 +11,7 @@ export class DebuggerTab extends Component {
 
         this.handleChangeActive = this.handleChangeActive.bind(this);
         this.handleRun = this.handleRun.bind(this);
+        this.handleStep = this.handleStep.bind(this);
     }
 
     handleChangeActive(e) {
@@ -29,18 +30,39 @@ export class DebuggerTab extends Component {
 
     handleRun() {
         // lets go!
-        if (!this.props.data.isRunning) {
+        if (this.props.data.isIdle) {
             this.props.data.program.run({
                 onPrint: (msg) => {
                     this.props.onChange(this.props.data.addConsoleMessage(msg));
                 }
             }).then((result) => {
-                this.props.onChange(this.props.data.pushStackVariable(["", result]).endRun());
+                this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
             });
 
             this.props.onChange(this.props.data.startRun());
         }
     }
+
+	handleStep() {
+		if (this.props.data.isIdle) {
+            this.props.data.program.run({
+                onPrint: (msg) => {
+                    this.props.onChange(this.props.data.addConsoleMessage(msg));
+                },
+				onNotify: (site, stack) => {
+					return new Promise((resolve, _) => {
+						this.props.onChange(this.props.data.setStack(stack.list().reverse()).setWaiter(site, resolve));
+					});
+				}
+            }).then((result) => {
+                this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
+            });
+
+            this.props.onChange(this.props.data.startStep());
+		} else if (this.props.data.isStepping && this.props.data.waiter != null) {
+			this.props.data.waiter();
+		}
+	}
 
     render() {
         let files = this.props.data.getFiles(this.props.onChange);
@@ -74,16 +96,42 @@ export class DebuggerTab extends Component {
                     id: "ir-debugger",
                     sizer: "ir-debugger-sizer",
                     data: this.props.data.ir,
+                    caretVisible: this.props.data.isStepping ? "": null,
                     mouseGrabber: this.props.mouseGrabber,
                     onMouseGrab: this.props.onMouseGrab,
                     onChange: (data) => {this.handleChangeIRView(data)},
                 }));
 
-                (!this.props.data.isRunning) && children.push(ce("button", {id: "run", onClick: this.handleRun}, "Run"));
+                (this.props.data.isIdle) && children.push(ce("button", {id: "run", onClick: this.handleRun}, "Run"));
+				(!this.props.data.isRunning) && children.push(ce("button", {id: "step", onClick: this.handleStep}, "Step"));
 
-                children.push(ce("div", {id: "console"}, []));
+                children.push(ce("div", {id: "console"}, this.props.data.console.map((msg, i) => {
+					return ce("p", {key: i, className: "message"}, msg);
+				})));
 
-                children.push(ce("div", {id: "stack"}, []));
+                children.push(ce("table", {id: "stack"}, 
+					ce("thead", null, ce("tr", null, ce("th", null, "name"), ce("th", null, "value"))),
+					ce("tbody", null,
+						this.props.data.stack.map(([name, value], i) => {
+							let isResult = false;
+							if (name != null) {
+								if (name == "") {
+									isResult = true;
+									name = "result";
+								} else {
+									name = name.toString();// could still be a Word token
+								}
+							} else {
+								name = "";
+							}
+
+						    return ce("tr", {key: i}, 
+						    	isResult ? ce("td", {className: "result"}, "result") : ce("td", null, name),
+						    	ce("td", null, value.toString())
+						    );
+						})
+					)
+				));
             } else {
                 throw new Error("unexpected");
             }

@@ -15,31 +15,43 @@ export class Caret extends Component {
         this.timer_ = null;
     }
 
-    static new() {
-        return ce(Caret, {start: now()})
+    static new(pulsating) {
+        if (pulsating) {
+            return ce(Caret, {pulsating: "", start: now()});
+        } else {
+            return ce(Caret, null);
+        }
     }
 
-    static getDerivedStateFromProps(props) {
-        if (now() < props.start + BLINK_DELAY) {
+    static getDerivedStateFromProps(props, state) {
+        if (props.pulsating != undefined && now() < props.start + BLINK_DELAY) {
             return {isVisible: true};
         } else {
-            return {};
+            return state;
         }
     }
 
     componentDidMount() {
-        this.timer_ = setInterval(() => {
-            this.setState({
-                isVisible: !this.state.isVisible
-            });
-        }, BLINK_INTERVAL);
+        if (this.props.pulsating != undefined) {
+            this.timer_ = setInterval(() => {
+                this.setState({
+                    isVisible: !this.state.isVisible
+                });
+            }, BLINK_INTERVAL);
+        }
     }
 
     componentWillUnmount() {
-        clearInterval(this.timer_);
+        if (this.timer_ != undefined) {
+            clearInterval(this.timer_);
+        }
     }
 
     render() {
-        return ce("span", Object.assign({id: "caret"}, this.state.isVisible ? {visible: ""} : {}), "\xA0");
+        if (this.props.pulsating != undefined) {
+            return ce("span", Object.assign({id: "caret"}, this.state.isVisible ? {visible: ""} : {}), "\xA0");
+        } else {
+            return ce("span", {id: "caret"}, "\xA0");
+        }
     }
 }

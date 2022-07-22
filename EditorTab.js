@@ -132,6 +132,7 @@ export class EditorTab extends Component {
             isActive && ce(TextEditor, {
                 id: wasError ? "error-editor" : "editor",
                 sizer: wasError ? "error-editor-sizer" : "editor-sizer",
+                pulsatingCaret: "",
                 data: files.get(this.data.activeKey),
                 mouseGrabber: this.props.mouseGrabber,
                 keyboardGrabber: this.props.keyboardGrabber,
