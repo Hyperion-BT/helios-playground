@@ -18,36 +18,57 @@ body {
     margin: 10px;
 }
 
-button {
+button, select {
     border-radius: 5px;
     background-color: #eee;
     border: 1px solid #ddd;
     cursor: pointer;
 }
 
+.sizer {
+    z-index: -500;
+    opacity: 0;
+}
+
 #text-sizer {
     position: fixed;
     top: -500px;
     font-family: monospace;
-    z-index: -500;
 }
 
 #editor-sizer {
-    z-index: -500;
     grid-column-start: 4;
     grid-column-end: 13;
     grid-row-start: 2;
     grid-row-end: 13;
-    opacity: 0;
 }
 
 #error-editor-sizer {
-    z-index: -500;
     grid-column-start: 4;
     grid-column-end: 13;
     grid-row-start: 2;
     grid-row-end: 12;
-    opacity: 0; 
+}
+
+#debugger-sizer {
+    grid-column-start: 2;
+    grid-column-end: 10;
+    grid-row-start: 2;
+    grid-row-end: 8;
+}
+
+#ir-debugger-sizer {
+    grid-column-start: 2;
+    grid-column-end: 10;
+    grid-row-start: 8;
+    grid-row-end: 13;
+}
+
+#error-debugger-sizer {
+    grid-column-start: 2;
+    grid-column-end: 13;
+    grid-row-start: 2;
+    grid-row-end: 13;
 }
 
 #root {
@@ -106,7 +127,150 @@ button {
     cursor: default;
 }
 
-#editor-tab {
+.text-editor, .text-viewer {
+    display: grid;
+    column-gap: 0px;
+    row-gap: 0px;
+    grid-template-columns: max-content 1fr 16px;
+    grid-template-rows: 1fr 16px;
+    border: 1px solid #ddd;
+    font-family: monospace;
+    overflow: hidden;
+    user-select: none;
+}
+
+.line-number-column {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 3;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 2;
+    margin-right: 2px;
+}
+
+.bottom-left-corner {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 2;
+    grid-row-end: 3;
+    z-index: 20;
+    background-color:rgba(255, 255, 255, 0.5);
+}
+
+.file-content {
+    cursor: text;
+    grid-column-start: 2;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 3;
+    overflow: visible;
+    position: relative;
+    z-index: 0;
+}
+
+.hor-scrollbar {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 2;
+    grid-row-end: 3;
+    display: block;
+    position: relative;
+    height: 16px;
+    background-color: rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    z-index: 20;
+}
+
+.hor-scrollbar-thumb {
+    position: absolute;
+    display: block;
+    background-color: grey;
+    height: 16px;
+    cursor: pointer;
+}
+
+.ver-scrollbar {
+    grid-column-start: 3;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    display: block;
+    position: relative;
+    width: 16px;
+    background-color: rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    z-index: 20;
+}
+
+.ver-scrollbar-thumb {
+    position: absolute;
+    display: block;
+    background-color: grey;
+    width: 16px;
+    cursor: pointer;
+}
+
+.bottom-right-corner {
+    grid-column-start: 3;
+    grid-column-end: 4;
+    grid-row-start: 2;
+    grid-row-end: 3;
+    z-index: 20;
+    background-color:rgba(255, 255, 255, 0.5);
+}
+
+span {
+    position: relative;
+    display: inline-block;
+}
+
+.line-number-column .line-number {
+    width: max-content;
+    background-color: rgb(165, 217, 252);
+    color: rgb(102, 102, 102);
+}
+
+.file-content p {
+    position: relative;
+    width: max-content;
+}
+
+.file-content span#caret {
+    position: relative;
+    width: 0px;
+    bottom: 0px;
+    height: 100%;
+}
+
+.file-content span#caret[visible]::after {
+    position: absolute;
+    content: " ";
+    background-color: red;
+    height: 100%;
+    width: 2px;
+    left: -1px;
+    z-index: 10;
+}
+
+.file-content span.selection {
+    color: white;
+    background-color: rgb(115, 139, 221);
+    z-index: 9;
+}
+
+.file-content[error] span.selection {
+    text-decoration: underline;
+    text-decoration-color: red;
+    text-decoration-thickness: 2px;
+    color: black;
+    background-color: white;
+}
+
+#editor-tab, #debugger-tab {
     grid-column-start: 2;
     grid-column-end: 13;
     grid-row-start: 1;
@@ -197,144 +361,68 @@ button#new-file {
     color: red;
 }
 
-.file-editor {
-    display: grid;
-    column-gap: 0px;
-    row-gap: 0px;
-    grid-template-columns: max-content 1fr 16px;
-    grid-template-rows: 1fr 16px;
-    border: 1px solid #ddd;
-    font-family: monospace;
-    overflow: hidden;
-}
-
-.file-editor .line-number-column {
+#debugger-tab .file-selector {
     grid-column-start: 1;
-    grid-column-end: 2;
-    grid-row-start: 1;
-    grid-row-end: 3;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    z-index: 2;
-    margin-right: 2px;
-}
-
-.file-editor .bottom-left-corner {
-    grid-column-start: 1;
-    grid-column-end: 2;
-    grid-row-start: 2;
-    grid-row-end: 3;
-    z-index: 20;
-    background-color:rgba(255, 255, 255, 0.5);
-}
-
-.file-editor .file-content {
-    cursor: text;
-    grid-column-start: 2;
-    grid-column-end: 4;
-    grid-row-start: 1;
-    grid-row-end: 3;
-    overflow: visible;
-    position: relative;
-    z-index: 0;
-}
-
-.file-editor .hor-scrollbar {
-    grid-column-start: 2;
-    grid-column-end: 3;
-    grid-row-start: 2;
-    grid-row-end: 3;
-    display: block;
-    position: relative;
-    height: 16px;
-    background-color: rgba(255, 255, 255, 0.5);
-    overflow: hidden;
-    z-index: 20;
-}
-
-.file-editor .hor-scrollbar-thumb {
-    position: absolute;
-    display: block;
-    background-color: grey;
-    height: 16px;
-    cursor: pointer;
-}
-
-.file-editor .ver-scrollbar {
-    grid-column-start: 3;
     grid-column-end: 4;
     grid-row-start: 1;
     grid-row-end: 2;
-    display: block;
-    position: relative;
-    width: 16px;
-    background-color: rgba(255, 255, 255, 0.5);
-    overflow: hidden;
-    z-index: 20;
 }
 
-.file-editor .ver-scrollbar-thumb {
-    position: absolute;
-    display: block;
-    background-color: grey;
-    width: 16px;
-    cursor: pointer;
-}
-
-.file-editor .bottom-right-corner {
-    grid-column-start: 3;
-    grid-column-end: 4;
+#debugger-tab #debugger {
+    grid-column-start: 1;
+    grid-column-end: 9;
     grid-row-start: 2;
-    grid-row-end: 3;
-    z-index: 20;
-    background-color:rgba(255, 255, 255, 0.5);
+    grid-row-end: 8;
 }
 
-.file-editor span {
-    position: relative;
-    display: inline-block;
+#debugger-tab #ir-debugger {
+    grid-column-start: 1;
+    grid-column-end: 9;
+    grid-row-start: 8;
+    grid-row-end: 13;
 }
 
-.file-editor .line-number-column .line-number {
-    width: max-content;
-    background-color: rgb(165, 217, 252);
-    color: rgb(102, 102, 102);
+#debugger-tab #error-debugger {
+    grid-column-start: 1;
+    grid-column-end: 12;
+    grid-row-start: 2;
+    grid-row-end: 12;
 }
 
-.file-editor .file-content p {
-    position: relative;
-    width: max-content;
+#debugger-tab .error-message {
+    grid-column-start: 1;
+    grid-column-end: 12;
+    grid-row-start: 12;
+    grid-row-end: 13;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 10px;
+    border: 1px solid #ddd;
+    color: red;
 }
 
-.file-editor .file-content span#caret {
-    position: relative;
-    width: 0px;
-    bottom: 0px;
-    height: 100%;
+#debugger-tab button#run {
+    grid-column-start: 9;
+    grid-column-end: 10;
+    grid-row-start: 1;
+    grid-row-end: 2;
 }
 
-.file-editor .file-content span#caret[visible]::after {
-    position: absolute;
-    content: " ";
-    background-color: red;
-    height: 100%;
-    width: 2px;
-    left: -1px;
-    z-index: 10;
+#debugger-tab #console {
+    grid-column-start: 9;
+    grid-column-end: 12;
+    grid-row-start: 2;
+    grid-row-end: 8;
+    overflow: auto;
+    border: 1px solid #ddd;
 }
 
-.file-editor .file-content span.selection {
-    color: white;
-    background-color: rgb(115, 139, 221);
-    z-index: 9;
-}
-
-.file-editor .file-content[error] span.selection {
-    text-decoration: underline;
-    text-decoration-color: red;
-    text-decoration-thickness: 2px;
-    color: black;
-    background-color: white;
+#debugger-tab #stack {
+    grid-column-start: 9;
+    grid-column-end: 12;
+    grid-row-start: 8;
+    grid-row-end: 13;
+    overflow: auto;
+    border: 1px solid #ddd;
 }

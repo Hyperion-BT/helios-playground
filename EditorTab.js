@@ -2,7 +2,8 @@ import * as helios from "./helios.js";
 import {ce, assertClass, FilePos} from "./util.js";
 import {EditorData} from "./EditorData.js";
 import {Component} from "./Component.js";
-import {FileEditor} from "./FileEditor.js";
+import {TextViewer} from "./TextViewer.js";
+import {TextEditor} from "./TextEditor.js";
 
 export class EditorTab extends Component {
     constructor(props) {
@@ -77,12 +78,7 @@ export class EditorTab extends Component {
                 this.setState({lastOK: null});
 
                 let newData = this.data.updateActive(fileData => {
-                    fileData = fileData.setError(e).scrollCaretToCenter(
-                        FileEditor.estimateNumVisibleChars(this.data.activeFile.nLines, "error-editor-sizer"), 
-                        FileEditor.estimateNumVisibleLines("error-editor-sizer")
-                    );
-
-                    return fileData;
+                    return TextViewer.scrollErrorToCenter(fileData, e, "error-editor-sizer");
                 });
 
                 this.props.onChange(newData);
@@ -133,7 +129,7 @@ export class EditorTab extends Component {
             dirty && ce("button", {id: "save-file", onClick: this.handleSave}, "Save"),
             isActive && ce("button", {id: "delete-file", onClick: this.handleDelete}, "Delete"),
             wasError && ce("p", {className: "error-message"}, this.data.activeFile.error.message),
-            isActive && ce(FileEditor, {
+            isActive && ce(TextEditor, {
                 id: wasError ? "error-editor" : "editor",
                 sizer: wasError ? "error-editor-sizer" : "editor-sizer",
                 data: files.get(this.data.activeKey),

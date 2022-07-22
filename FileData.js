@@ -331,15 +331,22 @@ export class FileData {
     }
 
     setError(error) {
+        // also updated the caretPos
+        let that = this;
+        if (error != null) {
+            let [x, y] = error.getFilePos();
+            that = that.moveCaretTo(x, y);
+        }
+
         return new FileData(
-            this.lines_,
-            this.selPos0_,
-            this.selPos1_,
-            this.viewPos_,
+            that.lines_,
+            that.selPos0_,
+            that.selPos1_,
+            that.viewPos_,
             error,
-            this.history_,
-            this.histIdx_,
-            this.histHead_,
+            that.history_,
+            that.histIdx_,
+            that.histHead_,
         );
     }
 
