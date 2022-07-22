@@ -1,10 +1,10 @@
 import * as helios from "./helios.js";
-import {SPACE, TAB, assert, stringToLines, linesToString, trimSpaces, isWordChar, Vec, FilePos} from "./util.js";
+import {SPACE, TAB, assert, assertDefined, stringToLines, linesToString, trimSpaces, isWordChar, Vec, FilePos} from "./util.js";
 
 const MAX_HIST = 100;
 
 export class FileData {
-    constructor(lines, selPos0, selPos1, viewPos, history, histIdx, histHead) {
+    constructor(lines, selPos0, selPos1, viewPos, error, history, histIdx, histHead) {
         assert(!selPos0.isNaN());
         assert(!selPos1.isNaN());
         assert(!viewPos.isNaN());
@@ -13,10 +13,11 @@ export class FileData {
         this.selPos0_ = selPos0; 
         this.selPos1_ = selPos1; // if selPos0 == selPos1 then nothing is selected, selPos1 is the cursor position
         this.viewPos_ = viewPos; // determines scroll position in editor
+        this.error_   = error;
 
         this.history_  = history; // list of pairs of [lines, caretPos]
         this.histIdx_  = histIdx;
-        this.histHead_ = histHead; 
+        this.histHead_ = assertDefined(histHead);
     }
 
     static new(raw) {
@@ -24,11 +25,12 @@ export class FileData {
         let selPos0 = new FilePos(0, 0);
         let selPos1 = new FilePos(0, 0);
         let viewPos = new FilePos(0, 0);
+        let error   = null;
         let history = [];
         let histIdx = 0;
         let histHead = null;
 
-        return new FileData(lines, selPos0, selPos1, viewPos, history, histIdx, histHead);
+        return new FileData(lines, selPos0, selPos1, viewPos, error, history, histIdx, histHead);
     }
 
     get raw() {
@@ -114,6 +116,10 @@ export class FileData {
         return this.viewPos_;
     }
 
+    get error() {
+        return this.error_;
+    }
+
     findFirstNonSpace(y) {
         for (let x = 0; x < this.lines_[y].length; x++) {
             if (this.lines_[y][x] != SPACE) {
@@ -197,21 +203,35 @@ export class FileData {
         return this.findWordBoundary(p0, 1);
     }
 
-    // doesn't mutate, returns a new FileData
-    moveCaretTo(x, y, isSelecting = false) {
-        assert(arguments.length < 4);
-
-        let newPos = (new FilePos(x, y)).bound(this.lines_, false);
+    moveCaretInternal(newPos, isSelecting = false) {
+        // detect no change
+        if (newPos.x == this.caretPos.x && newPos.y == this.caretPos.y) {
+            if (isSelecting) {
+                return this;
+            } else if (newPos.x == this.selPos0_.x && newPos.y == this.selPos0_.y) {
+                return this;
+            }
+        }
 
         return new FileData(
             this.lines_,
             isSelecting ? this.selPos0_ : newPos,
             newPos,
             this.viewPos_,
+            isSelecting ? null : this.error_,
             this.history_,
             this.histIdx_,
             this.histHead_,
         );
+    }
+
+    // doesn't mutate, returns a new FileData
+    moveCaretTo(x, y, isSelecting = false) {
+        assert(arguments.length < 4);
+
+        let newPos = (new FilePos(x, y)).bound(this.lines_, false);
+
+        return this.moveCaretInternal(newPos, isSelecting);
     }
 
     // doesn't mutate, returns a new FileData
@@ -220,15 +240,7 @@ export class FileData {
 
         newPos = newPos.bound(this.lines_, wrap);
 
-        return new FileData(
-            this.lines_,
-            isSelecting ? this.selPos0_ : newPos,
-            newPos,
-            this.viewPos_,
-            this.history_,
-            this.histIdx_,
-            this.histHead_,
-        );
+        return this.moveCaretInternal(newPos, isSelecting);
     }
 
     selectAll() {
@@ -241,6 +253,7 @@ export class FileData {
             newPos0,
             newPos1,
             this.viewPos_,
+            null,
             this.history_,
             this.histIdx_,
             this.histHead_,
@@ -254,10 +267,34 @@ export class FileData {
             this.selPos0_,
             this.selPos1_,
             p,
+            this.error_,
             this.history_,
             this.histIdx_,
             this.histHead_,
         );
+    }
+
+    boundViewPos(nVisibleChars, nVisibleLines) {
+        let x = this.viewPos_.x;
+        let y = this.viewPos_.y;
+
+        if (Number.isNaN(x) || x < 0) {
+            x = 0;
+        } else if (this.maxLineChars < nVisibleChars) {
+            x = 0;
+        } else if (x > this.maxLineChars - nVisibleChars + 1) {
+            x = this.maxLineChars - nVisibleChars + 1;
+        }
+
+        if (Number.isNaN(y) || y < 0) {
+            y = 0;
+        } else if (this.nLines < nVisibleLines) {
+            y = 0;
+        } else if (y > this.nLines - nVisibleLines) {
+            y = this.nLines - nVisibleLines;
+        }
+
+        return this.setViewPos(new FilePos(x, y));
     }
 
     // make sure the caret is in the view area
@@ -283,11 +320,23 @@ export class FileData {
             y -= Math.min(nVisibleLines + y - this.nLines, y);
         }
 
+        return this.setViewPos(new FilePos(x, y));
+    }
+
+    scrollCaretToCenter(nVisibleChars, nVisibleLines) {
+        let x = this.caretPos.x - nVisibleChars/2;
+        let y = this.caretPos.y - nVisibleLines/2;
+
+        return this.setViewPos(new FilePos(x, y)).boundViewPos(nVisibleChars, nVisibleLines);
+    }
+
+    setError(error) {
         return new FileData(
             this.lines_,
             this.selPos0_,
             this.selPos1_,
-            new FilePos(x, y),
+            this.viewPos_,
+            error,
             this.history_,
             this.histIdx_,
             this.histHead_,
@@ -312,7 +361,8 @@ export class FileData {
             this.lines_, 
             this.selPos0_, 
             this.selPos1_, 
-            this.viewPos_, 
+            this.viewPos_,
+            this.error_,
             history, 
             histIdx, 
             null,
@@ -338,7 +388,8 @@ export class FileData {
                 newLines, 
                 newPos, 
                 newPos, 
-                this.viewPos_, 
+                this.viewPos_,
+                null, 
                 this.history_, 
                 histIdx, 
                 histHead,
@@ -371,7 +422,8 @@ export class FileData {
                 newLines, 
                 newPos, 
                 newPos, 
-                this.viewPos_, 
+                this.viewPos_,
+                null, 
                 this.history_, 
                 histIdx, 
                 histHead,
@@ -404,7 +456,8 @@ export class FileData {
                 newLines, 
                 newPos, 
                 newPos, 
-                that.viewPos_, 
+                that.viewPos_,
+                null, 
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -443,7 +496,8 @@ export class FileData {
                 newLines, 
                 p, 
                 p, 
-                that.viewPos_, 
+                that.viewPos_,
+                null, 
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -477,11 +531,13 @@ export class FileData {
             }
 
             let that = this.pushHistory(oldLines, p);
+
             return new FileData(
                 newLines, 
                 newPos, 
                 newPos, 
-                that.viewPos_, 
+                that.viewPos_,
+                null, 
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -521,7 +577,8 @@ export class FileData {
             newLines, 
             newPos, 
             newPos, 
-            that.viewPos_, 
+            that.viewPos_,
+            null, 
             that.history_, 
             that.histIdx_, 
             that.histHead_,
@@ -546,13 +603,14 @@ export class FileData {
         let newPos0 = new FilePos(oldPos0.x + TAB.length, oldPos0.y);
         let newPos1 = new FilePos(oldPos1.x + TAB.length, oldPos1.y);
 
-        let that = this.pushBoundary(oldLines, this.caretPos);
+        let that = this.pushHistory(oldLines, this.caretPos);
 
         return new FileData(
             newLines, 
             newPos0, 
             newPos1, 
-            that.viewPos_, 
+            that.viewPos_,
+            null, 
             that.history_, 
             that.histIdx_, 
             that.histHead_,
@@ -594,7 +652,8 @@ export class FileData {
             newLines, 
             newPos0, 
             newPos1, 
-            that.viewPos_, 
+            that.viewPos_,
+            null, 
             that.history_, 
             that.histIdx_, 
             that.histHead_,

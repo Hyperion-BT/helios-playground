@@ -18,6 +18,13 @@ body {
     margin: 10px;
 }
 
+button {
+    border-radius: 5px;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
 #text-sizer {
     position: fixed;
     top: -500px;
@@ -32,6 +39,15 @@ body {
     grid-row-start: 2;
     grid-row-end: 13;
     opacity: 0;
+}
+
+#error-editor-sizer {
+    z-index: -500;
+    grid-column-start: 4;
+    grid-column-end: 13;
+    grid-row-start: 2;
+    grid-row-end: 12;
+    opacity: 0; 
 }
 
 #root {
@@ -118,9 +134,38 @@ button#new-file {
     border: 1px solid #ddd;
 }
 
-#editor-tab button#save-file {
+#editor-tab button#check-file {
     grid-column-start: 3;
     grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+#editor-tab div#file-is-valid {
+    grid-column-start: 3;
+    grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    color: green;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid green;
+    border-radius: 5px;
+    cursor: default;
+}
+
+#editor-tab button#save-file {
+    grid-column-start: 4;
+    grid-column-end: 5;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+#editor-tab button#delete-file {
+    grid-column-start: 11;
+    grid-column-end: 12;
     grid-row-start: 1;
     grid-row-end: 2;
 }
@@ -130,6 +175,26 @@ button#new-file {
     grid-column-end: 12;
     grid-row-start: 2;
     grid-row-end: 13;
+}
+
+#editor-tab #error-editor {
+    grid-column-start: 3;
+    grid-column-end: 12;
+    grid-row-start: 2;
+    grid-row-end: 12;
+}
+
+#editor-tab .error-message {
+    grid-column-start: 3;
+    grid-column-end: 12;
+    grid-row-start: 12;
+    grid-row-end: 13;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 10px;
+    border: 1px solid #ddd;
+    color: red;
 }
 
 .file-editor {
@@ -153,6 +218,7 @@ button#new-file {
     flex-direction: column;
     align-items: flex-start;
     z-index: 2;
+    margin-right: 2px;
 }
 
 .file-editor .bottom-left-corner {
@@ -233,8 +299,8 @@ button#new-file {
 
 .file-editor .line-number-column .line-number {
     width: max-content;
-    background-color: black;
-    color: white;
+    background-color: rgb(165, 217, 252);
+    color: rgb(102, 102, 102);
 }
 
 .file-editor .file-content p {
@@ -263,4 +329,12 @@ button#new-file {
     color: white;
     background-color: rgb(115, 139, 221);
     z-index: 9;
+}
+
+.file-editor .file-content[error] span.selection {
+    text-decoration: underline;
+    text-decoration-color: red;
+    text-decoration-thickness: 2px;
+    color: black;
+    background-color: white;
 }

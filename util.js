@@ -15,7 +15,7 @@ export function assert(cond, msg = "unexpected") {
 }
 
 export function assertDefined(x) {
-    if (x == undefined) {
+    if (x === undefined) {
         throw new Error("undefined");
     }
 

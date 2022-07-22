@@ -1,4 +1,5 @@
-import {ce, assertClass} from "./util.js";
+import * as helios from "./helios.js";
+import {ce, assertClass, FilePos} from "./util.js";
 import {EditorData} from "./EditorData.js";
 import {Component} from "./Component.js";
 import {FileEditor} from "./FileEditor.js";
@@ -6,6 +7,25 @@ import {FileEditor} from "./FileEditor.js";
 export class EditorTab extends Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            lastOK: null, // null -> no check done before 
+        };
+
+        this.handleCreate = this.handleCreate.bind(this);
+        this.handleSave = this.handleSave.bind(this);
+        this.handleDelete = this.handleDelete.bind(this);
+        this.handleCheck = this.handleCheck.bind(this);
+    }
+
+    static getDerivedStateFromProps(props, state) {
+        state = Object.assign({}, state);
+
+        if ((props.data.activeFile == null) || (props.data.activeFile.raw == null) || (props.data.activeFile.raw != state.lastOK)) {
+            state.lastOK = null;
+        }
+        
+        return state;
     }
 
     get data() {
@@ -16,7 +36,7 @@ export class EditorTab extends Component {
         this.props.onChange(this.data.setActive(key));
     }
 
-    handleClickNewFile() {
+    handleCreate() {
         this.data.db.newFile().then(
             key => {
                 void this.data.getFiles(this.props.onChange);
@@ -28,10 +48,46 @@ export class EditorTab extends Component {
         this.props.onChange(this.data.setActiveFileData(fileData));
     } 
 
-    handleSave(raw) {
-        this.data.saveActiveFile(raw).then(() => {
+    handleSave() {
+        this.data.saveActiveFile().then(() => {
+            // unnecessary to use this.props.onChange()
             this.setState({});
         });
+    }
+
+    handleDelete() {
+        this.data.deleteActiveFile().then((newData) => {
+            this.props.onChange(newData);
+        });
+    }
+
+    handleCheck() {
+        let raw = this.data.activeFile.raw;
+
+        if (raw != null) {
+            try {
+                void helios.compile(raw, {stage: helios.CompilationStage.Untype});
+
+                this.setState({lastOK: raw});
+            } catch (e) {
+                if (!(e instanceof helios.UserError)) {
+                    throw e;
+                }
+
+                this.setState({lastOK: null});
+
+                let newData = this.data.updateActive(fileData => {
+                    fileData = fileData.setError(e).scrollCaretToCenter(
+                        FileEditor.estimateNumVisibleChars(this.data.activeFile.nLines, "error-editor-sizer"), 
+                        FileEditor.estimateNumVisibleLines("error-editor-sizer")
+                    );
+
+                    return fileData;
+                });
+
+                this.props.onChange(newData);
+            }
+        }
     }
 
     render() {
@@ -55,27 +111,38 @@ export class EditorTab extends Component {
             let li = ce("li", null, ce("button", {
                 key: key,
                 className: "file-link",
-                status: status,
-                active: (key == this.data.active ? "" : null),
+                "name-error": nameError,
+                active: (key == this.data.activeKey ? "" : null),
                 onClick: () => {this.handleClickFileLink(key)},
             }, caption));
 
             fileList.push(li);
         });
         
+        let isActive = this.data.activeKey != null;
+        let dirty = this.data.isActiveDirty;
+        let wasOK = isActive && (this.data.activeFile.raw == this.state.lastOK);
+        let wasError = isActive && this.data.activeFile.error != null;
+
         return ce("div", {id: "editor-tab"},
-            ce("button", {id: "new-file", onClick: () => {this.handleClickNewFile()}}, "New"),
+            ce("button", {id: "new-file", onClick: this.handleCreate}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),
-            this.data.active != null && ce(FileEditor, {
-                id: "editor",
-                sizer: "editor-sizer",
-                data: files.get(this.data.active),
+            isActive && (wasOK ? 
+                ce("div", {id: "file-is-valid"}, "OK") : 
+                ce("button", {id: "check-file", onClick: this.handleCheck}, "Check")),
+            dirty && ce("button", {id: "save-file", onClick: this.handleSave}, "Save"),
+            isActive && ce("button", {id: "delete-file", onClick: this.handleDelete}, "Delete"),
+            wasError && ce("p", {className: "error-message"}, this.data.activeFile.error.message),
+            isActive && ce(FileEditor, {
+                id: wasError ? "error-editor" : "editor",
+                sizer: wasError ? "error-editor-sizer" : "editor-sizer",
+                data: files.get(this.data.activeKey),
                 mouseGrabber: this.props.mouseGrabber,
                 keyboardGrabber: this.props.keyboardGrabber,
                 onMouseGrab: this.props.onMouseGrab,
                 onKeyboardGrab: this.props.onKeyboardGrab,
                 onChange: (data) => {this.handleFileEditorChange(data)},
-                onSave: (this.data.isActiveDirty ? (raw) => {this.handleSave(raw)} : null),
+                onSave: (dirty ? this.handleSave : null),
             }),
         );
     }

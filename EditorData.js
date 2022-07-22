@@ -10,14 +10,14 @@ export class EditorData {
     }
 
     static new(db) {
-        return new EditorData(assertDefined(db), new Map(), null);
+        return new EditorData(assertDefined(db), new Map(), null, null);
     }
 
     get db() {
         return this.db_;
     }
 
-    get active() {
+    get activeKey() {
         if (this.active_ != null && this.files_.has(this.active_)) {
             return this.active_;
         } else {
@@ -25,6 +25,14 @@ export class EditorData {
         }
     }
     
+    get activeFile() {
+        if (this.active_ != null && this.files_.has(this.active_)) {
+            return this.files_.get(this.active_);
+        } else {
+            return null;
+        }
+    }    
+
     isSynced(files) {
         for (let [key, _] of files) {
             if (!this.files_.has(key)) {
@@ -59,12 +67,12 @@ export class EditorData {
             }
         }
 
-        let active = this.active_;
-        if (!newFiles.has(active)) {
-            active = null;
+        let activeKey = this.active_;
+        if (!newFiles.has(activeKey)) {
+            activeKey = null;
         }
 
-        return new EditorData(this.db_, newFiles, active);
+        return new EditorData(this.db_, newFiles, activeKey);
     }
 
     // returns map of files
@@ -105,8 +113,10 @@ export class EditorData {
         }
     }
 
-    saveActiveFile(raw) {
-        return this.db_.setFile(this.active_, raw);
+    updateActive(fn) {
+        if (this.active_ != null && this.files_.has(this.active_)) {
+            return this.setActiveFileData(fn(this.files_.get(this.active_)));
+        }
     }
 
     get isActiveDirty() {
@@ -122,4 +132,25 @@ export class EditorData {
             return false;
         }
     }
+
+    saveActiveFile() {
+        if (this.files_.has(this.active_)) {
+            let raw = this.files_.get(this.active_).raw;
+
+            return this.db_.setFile(this.active_, raw);
+        }
+    }
+
+    // doesn't mutate, return Promise<EditorData>
+    deleteActiveFile() {
+        if (this.files_.has(this.active_)) {
+
+            return this.db_.deleteFile(this.active_).then(() => {
+                return this.setActive(null);
+            });
+        } else {
+            return new Promise((resolve, reject) => {resolve()});
+        }
+    }
+
 }

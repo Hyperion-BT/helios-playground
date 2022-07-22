@@ -1,9 +1,11 @@
-import {SPACE, ce, assertClass, formatPaddedInt, findElement, Vec, FilePos} from "./util.js";
+import {SPACE, ce, assert, assertClass, formatPaddedInt, findElement, Vec, FilePos} from "./util.js";
 import {FileData} from "./FileData.js";
 import {Component} from "./Component.js";
 import {Caret} from "./Caret.js";
 
 const refTextElement = document.getElementById("text-sizer");
+const SCROLLBAR_SIZE = 16; // px
+const LINE_NUMBER_MARGIN_RIGHT = 2; // px
 
 export class FileEditor extends Component {
     constructor(props) {
@@ -44,10 +46,6 @@ export class FileEditor extends Component {
         return refTextElement.getBoundingClientRect().height;
     }
 
-    get scrollbarSize() {
-        return 16; // px
-    }
-
     get outerWidth() {
         return document.getElementById(this.props.sizer).getBoundingClientRect().width;
     }
@@ -66,15 +64,15 @@ export class FileEditor extends Component {
 
     // in px
     get lineNumberColumnWidth() {
-        return this.lineNumberPadding + this.nLineNumberDigits*this.charWidth;
+        return this.lineNumberPadding + this.nLineNumberDigits*this.charWidth + LINE_NUMBER_MARGIN_RIGHT;
     }
 
     get innerWidth() {
-        return this.outerWidth - this.scrollbarSize - this.lineNumberColumnWidth;
+        return this.outerWidth - SCROLLBAR_SIZE - this.lineNumberColumnWidth;
     }
 
     get innerHeight() {
-        return this.outerHeight - this.scrollbarSize;
+        return this.outerHeight - SCROLLBAR_SIZE;
     }
 
     get nVisibleChars() {
@@ -84,6 +82,23 @@ export class FileEditor extends Component {
     get nVisibleLines() {
         return Math.floor(this.innerHeight/this.lineHeight);
     }
+
+    static estimateNumVisibleLines(sizerId) {
+        let outerHeight = document.getElementById(sizerId).getBoundingClientRect().height;
+        let innerHeight = outerHeight - SCROLLBAR_SIZE;
+        let lineHeight = refTextElement.getBoundingClientRect().height;
+
+        return Math.floor(innerHeight/lineHeight);
+    }
+
+    static estimateNumVisibleChars(nLines, sizerId) {
+        let outerWidth = document.getElementById(sizerId).getBoundingClientRect().width;
+        let nLineNumberDigits = Math.max(Math.ceil(Math.log10(nLines)), 2);
+        let charWidth = refTextElement.getBoundingClientRect().width/26;
+        let innerWidth = outerWidth - SCROLLBAR_SIZE - ((2 + nLineNumberDigits)*charWidth + LINE_NUMBER_MARGIN_RIGHT);
+        return Math.floor(innerWidth/charWidth);
+    }
+
 
     // one extra char to accomodate caret at end-of-line
     get fileWidth() {
@@ -195,14 +210,14 @@ export class FileEditor extends Component {
                         let dx = 0;
                         if (x < rect.x) {
                             dx -= 1;
-                        } else if (x > rect.right - this.scrollbarSize) {
+                        } else if (x > rect.right - SCROLLBAR_SIZE) {
                             dx += 1;
                         }
 
                         let dy = 0;
                         if (y < rect.y) {
                             dy -= 1;
-                        } else if (y > rect.bottom - this.scrollbarSize) {
+                        } else if (y > rect.bottom - SCROLLBAR_SIZE) {
                             dy += 1;
                         }
 
@@ -241,7 +256,7 @@ export class FileEditor extends Component {
 
             let x = this.state.scrollStart[1] + Math.round(charDelta);
 
-            this.props.onChange(this.data.setViewPos(this.boundViewPos(new FilePos(x, this.data.viewPos.y))));
+            this.props.onChange(this.data.setViewPos(new FilePos(x, this.data.viewPos.y)).boundViewPos(this.nVisibleChars, this.nVisibleLines));
         } else if (this.state.isVerScrolling) {
             let clientDelta = e.clientY - this.state.scrollStart[0];
 
@@ -251,7 +266,7 @@ export class FileEditor extends Component {
 
             let y = this.state.scrollStart[1] + Math.round(lineDelta);
 
-            this.props.onChange(this.data.setViewPos(this.boundViewPos(new FilePos(this.data.viewPos.x, y))));
+            this.props.onChange(this.data.setViewPos(new FilePos(this.data.viewPos.x, y)).boundViewPos(this.nVisibleChars, this.nVisibleLines));
         }
     }
 
@@ -299,7 +314,7 @@ export class FileEditor extends Component {
 
         let x = Math.round(this.fileWidth*frac/this.charWidth);
 
-        this.props.onChange(this.data.setViewPos(this.boundViewPos(new FilePos(x, this.data.viewPos.y))));
+        this.props.onChange(this.data.setViewPos(new FilePos(x, this.data.viewPos.y)).boundViewPos(this.nVisibleChars, this.nVisibleLines));
 
         e.stopPropagation();
         super.handleMouseDown();
@@ -322,7 +337,7 @@ export class FileEditor extends Component {
 
         let y = Math.round(this.fileHeight*frac/this.lineHeight);
 
-        this.props.onChange(this.data.setViewPos(this.boundViewPos(new FilePos(this.data.viewPos.x, y))));
+        this.props.onChange(this.data.setViewPos(new FilePos(this.data.viewPos.x, y)).boundViewPos(this.nVisibleChars, this.nVisibleLines));
 
         e.stopPropagation();
         super.handleMouseDown();
@@ -350,7 +365,7 @@ export class FileEditor extends Component {
             dy = 0;
         }
 
-        this.props.onChange(this.data.setViewPos(this.boundViewPos(this.data.viewPos.add(new FilePos(dx, dy)))));
+        this.props.onChange(this.data.setViewPos(this.data.viewPos.add(new FilePos(dx,dy))).boundViewPos(this.nVisibleChars, this.nVisibleLines));
     }
 
     handleKeyPress(e) {
@@ -497,6 +512,7 @@ export class FileEditor extends Component {
                 }
                 break;
             case "s":
+                // keep this save here because the file-editor can grab keyboard input, and the parent editor-tab can't
                 if (e.ctrlKey) {
                     this.handleSave();
                     e.preventDefault();
@@ -524,9 +540,7 @@ export class FileEditor extends Component {
 
     handleSave() {
         if (this.props.onSave != undefined && this.props.onSave != null) {
-            let raw = this.data.raw;
-
-            this.props.onSave(raw);
+            this.props.onSave();
 
             this.setState({});
         }
@@ -598,6 +612,30 @@ export class FileEditor extends Component {
                 caretVisible && Caret.new(),
                 ce("span", null, text.slice(xCaret)),
             ];
+        } else if (xCaret < xSelEnd && xCaret > xSelStart) {
+            inner = [
+                ce("span", null, text.slice(0, xSelStart)),
+                ce("span", {className: "selection"}, text.slice(xSelStart, xCaret)),
+                caretVisible && Caret.new(),
+                ce("span", {className: "selection"}, text.slice(xCaret, xSelEnd)),
+                ce("span", null, text.slice(xSelEnd)),
+            ];
+        } else if (xCaret < xSelStart) {
+            inner = [
+                ce("span", null, text.slice(0, xCaret)),
+                caretVisible && Caret.new(),
+                ce("span", null, text.slice(xCaret, xSelStart)),
+                ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
+                ce("span", null, text.slice(xSelEnd)),
+            ];
+        } else if (xCaret > xSelEnd) {
+            inner = [
+                ce("span", null, text.slice(0, xSelStart)),                
+                ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
+                ce("span", null, text.slice(xSelEnd, xCaret)),
+                caretVisible && Caret.new(),
+                ce("span", null, text.slice(xCaret)),
+            ];
         } else {
             throw new Error("unhandled");
         }
@@ -610,6 +648,13 @@ export class FileEditor extends Component {
         let selStart = this.data.selectionStart;
         let selEnd   = this.data.selectionEnd;
 
+        let hasError = this.data.error != null;
+        if (hasError) {
+            let [x, y] = this.data.error.getFilePos();
+            selStart = new FilePos(x, y);
+            selEnd = new FilePos(x+1, y);
+        }
+
         let nDigits = this.nLineNumberDigits;
 
         // TODO: only show lines in view
@@ -618,7 +663,7 @@ export class FileEditor extends Component {
 
         let y0 = this.data.viewPos.y;
 
-        for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + this.scrollbarSize)/this.lineHeight), this.data.nLines); y++) {
+        for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + SCROLLBAR_SIZE)/this.lineHeight), this.data.nLines); y++) {
             let lineNumber = SPACE + formatPaddedInt(y + 1, nDigits) + SPACE;
 
             lineNumbers.push(this.renderLineNumber(lineNumber));
@@ -629,55 +674,52 @@ export class FileEditor extends Component {
                     line,
                     caretPos.y == y ? caretPos.x : null, 
                     selStart.y == y ? selStart.x : (y > selStart.y && y < selEnd.y ? 0 : null),
-                    selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null)
+                    selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null),
                 )
             );
         }
 
-        return [
-            (this.props.onSave != null) && ce("button", {key: "save", id: "save-file", onClick: () => {this.handleSave()}}, "Save"),
-            ce(
-                "div", {
-                    key: "editor",
-                    id: this.props.id,
-                    className: "file-editor",
-                    tabIndex: "0",
-                    onFocus: this.handleFocus,
-                    onBlur: this.handleBlur,
-                    onKeyPress: this.handleKeyPress,
-                    onKeyDown: this.handleKeyDown,
-                    onWheel: this.handleWheel,
-                    style: {fontFamily: "monospace", userSelect: "none"},
-                }, 
-                ce("div", {className: "line-number-column", style: {width: this.lineNumberColumnWidth.toString() + "px"}}, ...lineNumbers),
-                ce("div", {className: "bottom-left-corner"}),
-                ce("div", {
-                    className: "file-content",
-                    style: {left: (-this.data.viewPos.x*this.charWidth).toString() + "px"},
-                    onMouseDown: this.handleMouseDown,
-                }, ...contentLines),
-                ce("div", {className: "hor-scrollbar", onMouseDown: this.handleHorScrollbarTrackMouseDown},
-                    this.hasHorOverflow && ce("div", {
-                        className: "hor-scrollbar-thumb", 
-                        onMouseDown: this.handleHorScrollbarThumbMouseDown,
-                        style: {
-                            width: this.horScrollbarThumbLength.toString() + "px",
-                            left: (this.horScrollbarThumbPos).toString() + "px",
-                        }
-                    })
-                ),
-                ce("div", {className: "ver-scrollbar", onMouseDown: this.handleVerScrollbarTrackMouseDown}, 
-                    this.hasVerOverflow && ce("div", {
-                        className: "ver-scrollbar-thumb", 
-                        onMouseDown: this.handleVerScrollbarThumbMouseDown,
-                        style: {
-                            height: this.verScrollbarThumbLength.toString() + "px",
-                            top:   (this.verScrollbarThumbPos).toString() + "px",
-                        }
-                    })
-                ),
-                ce("div", {className: "bottom-right-corner"}),
-            )
-        ];
+        return ce(
+            "div", {
+                id: this.props.id,
+                className: "file-editor",
+                tabIndex: "0",
+                onFocus: this.handleFocus,
+                onBlur: this.handleBlur,
+                onKeyPress: this.handleKeyPress,
+                onKeyDown: this.handleKeyDown,
+                onWheel: this.handleWheel,
+                style: {fontFamily: "monospace", userSelect: "none"},
+            }, 
+            ce("div", {className: "line-number-column", style: {width: this.lineNumberColumnWidth.toString() + "px"}}, ...lineNumbers),
+            ce("div", {className: "bottom-left-corner"}),
+            ce("div", {
+                className: "file-content",
+                error: hasError ? "" : null,
+                style: {left: (-this.data.viewPos.x*this.charWidth).toString() + "px"},
+                onMouseDown: this.handleMouseDown,
+            }, ...contentLines),
+            ce("div", {className: "hor-scrollbar", onMouseDown: this.handleHorScrollbarTrackMouseDown},
+                this.hasHorOverflow && ce("div", {
+                    className: "hor-scrollbar-thumb", 
+                    onMouseDown: this.handleHorScrollbarThumbMouseDown,
+                    style: {
+                        width: this.horScrollbarThumbLength.toString() + "px",
+                        left: (this.horScrollbarThumbPos).toString() + "px",
+                    }
+                })
+            ),
+            ce("div", {className: "ver-scrollbar", onMouseDown: this.handleVerScrollbarTrackMouseDown}, 
+                this.hasVerOverflow && ce("div", {
+                    className: "ver-scrollbar-thumb", 
+                    onMouseDown: this.handleVerScrollbarThumbMouseDown,
+                    style: {
+                        height: this.verScrollbarThumbLength.toString() + "px",
+                        top:   (this.verScrollbarThumbPos).toString() + "px",
+                    }
+                })
+            ),
+            ce("div", {className: "bottom-right-corner"}),
+        )
     }
 }

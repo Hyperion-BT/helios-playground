@@ -117,7 +117,6 @@ export class DB {
                 let store = transaction.objectStore("files");
 
                 let obj = {data: data};
-                console.log(obj);
                 let request = store.put(obj, key);
 
                 request.onerror = (e) => {
@@ -132,6 +131,25 @@ export class DB {
                     });
 
                     resolve();
+                }
+            }
+        );
+    }
+
+    deleteFile(key) {
+        return new Promise(
+            (resolve, reject) => {
+                let transaction = this.idb_.transaction(["files"], "readwrite");
+                let store = transaction.objectStore("files");
+
+                let request = store.delete(key);
+
+                request.onsuccess = (e) => {
+                    resolve();
+                }
+
+                transaction.onerror = (e) => {
+                    reject(new Error(`failed to delete ${key} from files`));
                 }
             }
         );
