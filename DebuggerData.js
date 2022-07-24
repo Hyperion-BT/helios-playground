@@ -1,4 +1,4 @@
-import * as helios from "./helios.js";
+import * as helios from "./external/helios.js";
 import {assert} from "./util.js";
 import {FileData} from "./FileData.js";
 import {FileViewerData} from "./FileViewerData.js";
@@ -7,7 +7,8 @@ import {TextViewer} from "./TextViewer.js";
 const DebuggerStatus = {
     Idle: 0,
     Running: 1,
-	Stepping: 2,
+	Stepping: 2, // we only get the 'next' option
+	Calling: 3, // we get the option to 'step-over' or 'step-in'
 };
 
 export class DebuggerData extends FileViewerData {
@@ -60,7 +61,11 @@ export class DebuggerData extends FileViewerData {
     }
 
 	get isStepping() {
-		return this.status_ == DebuggerStatus.Stepping;
+		return this.status_ == DebuggerStatus.Stepping || this.status_ == DebuggerStatus.Calling;
+	}
+
+	get isCalling() {
+		return this.status_ == DebuggerStatus.Calling;
 	}
 
     get console() {
@@ -169,7 +174,7 @@ export class DebuggerData extends FileViewerData {
                     throw e;
                 }
 
-                let fileData = TextViewer.scrollErrorToCenter(fileData, this.e, "error-debugger-sizer");
+                fileData = TextViewer.scrollErrorToCenter(fileData, e, "error-debugger-sizer");
 
                 return (new DebuggerData(
                     this.db_, 
@@ -236,13 +241,17 @@ export class DebuggerData extends FileViewerData {
     }
 
 	startStep() {
+		let that = this.setActiveFileData(
+			TextViewer.scrollCaretIntoView(this.activeFile.moveCaretTo(0, 0), "debugger-sizer")
+		);
+
         return new DebuggerData(
-            this.db_,
-            this.files_,
-            this.active_,
-            this.error_,
-            this.ir_,
-            this.program_,
+            that.db_,
+            that.files_,
+            that.active_,
+            that.error_,
+            that.ir_,
+            that.program_,
             DebuggerStatus.Stepping,
             [], // clear console and stack
             [],
@@ -250,7 +259,7 @@ export class DebuggerData extends FileViewerData {
         );
 	}
 
-    setIdle() {
+	setStatus(status) {
         return new DebuggerData(
             this.db_,
             this.files_,
@@ -258,29 +267,49 @@ export class DebuggerData extends FileViewerData {
             this.error_,
             this.ir_,
             this.program_,
-            DebuggerStatus.Idle,
+            status,
             this.console_,
-            this.stack_,
-			null,
-        );
-    }
-
-    addConsoleMessage(msg) {
-        let console = this.console;
-        console.push(msg);
-
-        return new DebuggerData(
-            this.db_,
-            this.files_,
-            this.active_,
-            this.error_,
-            this.ir_,
-            this.program_,
-            this.status_,
-            console,
             this.stack_,
 			this.waiter_,
         );
+	}
+
+    setStepping() {
+		return this.setStatus(DebuggerStatus.Stepping);
+    }
+
+	setCalling() {
+		return this.setStatus(DebuggerStatus.Calling);
+	}
+
+    setIdle() {
+		return this.setStatus(DebuggerStatus.Idle);
+    }
+
+    addConsoleMessage(msg) {
+        let messages = this.console.slice();
+        messages.push(msg);
+
+		let ir = this.ir_;
+
+		if (msg instanceof helios.UserError) {
+			ir = TextViewer.scrollErrorToCenter(this.ir_, msg, "ir-debugger-sizer");
+		}
+
+        let that = new DebuggerData(
+            this.db_,
+            this.files_,
+            this.active_,
+            this.error_,
+            ir,
+            this.program_,
+            this.status_,
+            messages,
+            this.stack_,
+			this.waiter_,
+        );
+
+		return that;
     }
 
     // input pair: [name, helios.PlutusCoreValue]
@@ -302,21 +331,29 @@ export class DebuggerData extends FileViewerData {
 	setWaiter(site, waiter) {
         let [x, y] = site.getFilePos();
 
-        console.log("moving caret to", x, y);
         let irData = this.ir_.moveCaretTo(x, y);
-        irData = TextViewer.scrollCaretToCenter(irData, "ir-debugger-sizer");
+        irData = TextViewer.scrollCaretIntoView(irData, "ir-debugger-sizer");
 
-		// TODO: use the site
+		let that = this;
+		if (site.codeMapSite != null) {
+			let fileData = that.activeFile;
+			let [xOrig, yOrig] = site.codeMapSite.getFilePos();
+			fileData = fileData.moveCaretTo(xOrig, yOrig);
+			fileData = TextViewer.scrollCaretIntoView(fileData, "debugger-sizer");
+
+			that = that.setActiveFileData(fileData);
+		}
+
 		return new DebuggerData(
-			this.db_,
-			this.files_,
-			this.active_,
-			this.error_,
+			that.db_,
+			that.files_,
+			that.active_,
+			that.error_,
 			irData,
-			this.program_,
-			this.status_,
-			this.console_,
-			this.stack_,
+			that.program_,
+			that.status_,
+			that.console_,
+			that.stack_,
 			waiter,
 		);
 	}

@@ -102,6 +102,16 @@ export class TextViewer extends Component {
         return data.scrollCaretToCenter(nVisibleChars, nVisibleLines);
     }
 
+	static scrollCaretIntoView(data, sizer) {
+        assertClass(data, FileData);
+        let nLines = data.nLines;
+
+        let nVisibleChars = TextViewer.estimateNumVisibleChars(nLines, sizer);
+        let nVisibleLines = TextViewer.estimateNumVisibleLines(sizer);
+
+		return data.scrollCaretIntoView(nVisibleChars, nVisibleLines);
+	}
+
     static scrollErrorToCenter(data, error, sizer) {
         return TextViewer.scrollCaretToCenter(data.setError(error), sizer);
     }
@@ -288,7 +298,6 @@ export class TextViewer extends Component {
     }
 
     renderCaret() {
-        console.log("rendering caret:");
         return Caret.new(this.props.pulsatingCaret != null);
     }
 

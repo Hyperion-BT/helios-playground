@@ -1,4 +1,4 @@
-import * as helios from "./helios.js";
+import * as helios from "./external/helios.js";
 import {ce, assertClass, FilePos} from "./util.js";
 import {EditorData} from "./EditorData.js";
 import {Component} from "./Component.js";

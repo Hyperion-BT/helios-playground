@@ -12,6 +12,9 @@ export class DebuggerTab extends Component {
         this.handleChangeActive = this.handleChangeActive.bind(this);
         this.handleRun = this.handleRun.bind(this);
         this.handleStep = this.handleStep.bind(this);
+        this.handleNext = this.handleNext.bind(this);
+        this.handleStepOver = this.handleStepOver.bind(this);
+        this.handleStepIn = this.handleStepIn.bind(this);
     }
 
     handleChangeActive(e) {
@@ -33,10 +36,16 @@ export class DebuggerTab extends Component {
         if (this.props.data.isIdle) {
             this.props.data.program.run({
                 onPrint: (msg) => {
-                    this.props.onChange(this.props.data.addConsoleMessage(msg));
+					return new Promise((resolve, _) => {
+						this.props.onChange(this.props.data.addConsoleMessage(msg), resolve);
+					});
                 }
             }).then((result) => {
-                this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
+				if (result instanceof Error) {
+					this.props.onChange(this.props.data.addConsoleMessage(result).setIdle());
+				} else {
+					this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
+				}
             });
 
             this.props.onChange(this.props.data.startRun());
@@ -47,20 +56,47 @@ export class DebuggerTab extends Component {
 		if (this.props.data.isIdle) {
             this.props.data.program.run({
                 onPrint: (msg) => {
-                    this.props.onChange(this.props.data.addConsoleMessage(msg));
-                },
-				onNotify: (site, stack) => {
 					return new Promise((resolve, _) => {
-						this.props.onChange(this.props.data.setStack(stack.list().reverse()).setWaiter(site, resolve));
+						this.props.onChange(this.props.data.addConsoleMessage(msg), resolve);
+					});
+                },
+				onStartCall: (site, stack) => {
+					return new Promise((resolve, _) => {
+						this.props.onChange(this.props.data.setStack(stack).setWaiter(site, resolve).setCalling());
+					});
+				},
+				onEndCall: (site, stack) => {
+					return new Promise((resolve, _) => {
+						this.props.onChange(this.props.data.setStack(stack).setWaiter(site, resolve).setStepping());
 					});
 				}
             }).then((result) => {
-                this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
+				if (result instanceof Error) {
+					this.props.onChange(this.props.data.addConsoleMessage(result).setIdle());
+				} else {
+					this.props.onChange(this.props.data.setStack([["", result]]).setIdle());
+				}
             });
 
             this.props.onChange(this.props.data.startStep());
-		} else if (this.props.data.isStepping && this.props.data.waiter != null) {
+		} 
+	}
+
+	handleNext() {
+		if (this.props.data.isStepping && (!this.props.data.isCalling) && this.props.data.waiter != null) {
 			this.props.data.waiter();
+		}
+	}
+
+	handleStepIn() {
+		if (this.props.data.isCalling && this.props.data.waiter != null) {
+			this.props.data.waiter(false);
+		}
+	}
+
+	handleStepOver() {
+		if (this.props.data.isCalling && this.props.data.waiter != null) {
+			this.props.data.waiter(true);
 		}
 	}
 
@@ -87,6 +123,7 @@ export class DebuggerTab extends Component {
                     id: "debugger",
                     sizer: "debugger-sizer",
                     data: this.props.data.activeFile,
+					caretVisible: this.props.data.isStepping ? "" : null,
                     mouseGrabber: this.props.mouseGrabber,
                     onMouseGrab: this.props.onMouseGrab,
                     onChange: (data) => {this.handleChangeFileView(data)},
@@ -103,16 +140,23 @@ export class DebuggerTab extends Component {
                 }));
 
                 (this.props.data.isIdle) && children.push(ce("button", {id: "run", onClick: this.handleRun}, "Run"));
-				(!this.props.data.isRunning) && children.push(ce("button", {id: "step", onClick: this.handleStep}, "Step"));
+				(this.props.data.isIdle) && children.push(ce("button", {id: "step", onClick: this.handleStep}, "Step"));
+				(this.props.data.isStepping && (!this.props.data.isCalling)) && children.push(ce("button", {id: "next", onClick: this.handleNext}, "Next"));
+				(this.props.data.isCalling) && children.push(ce("button", {id: "step-over", onClick: this.handleStepOver}, "Step over"));
+				(this.props.data.isCalling) && children.push(ce("button", {id: "step-in", onClick: this.handleStepIn}, "Step in"));
 
                 children.push(ce("div", {id: "console"}, this.props.data.console.map((msg, i) => {
-					return ce("p", {key: i, className: "message"}, msg);
+					if (msg instanceof Error) {
+						return ce("p", {key: i, className: "runtime-error-message"}, msg.message);
+					} else {
+						return ce("p", {key: i, className: "message"}, msg);
+					}
 				})));
 
-                children.push(ce("table", {id: "stack"}, 
+                children.push(ce("div", {id: "stack"}, ce("table", null, 
 					ce("thead", null, ce("tr", null, ce("th", null, "name"), ce("th", null, "value"))),
 					ce("tbody", null,
-						this.props.data.stack.map(([name, value], i) => {
+						this.props.data.stack.reverse().map(([name, value], i) => {
 							let isResult = false;
 							if (name != null) {
 								if (name == "") {
@@ -126,12 +170,12 @@ export class DebuggerTab extends Component {
 							}
 
 						    return ce("tr", {key: i}, 
-						    	isResult ? ce("td", {className: "result"}, "result") : ce("td", null, name),
+						    	isResult ? ce("td", {className: "result"}, name) : ce("td", null, name),
 						    	ce("td", null, value.toString())
 						    );
 						})
 					)
-				));
+				)));
             } else {
                 throw new Error("unexpected");
             }

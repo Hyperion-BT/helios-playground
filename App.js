@@ -98,8 +98,8 @@ export class App extends React.Component {
         this.setState({data: this.state.data.setEditorData(d)});
     }
 
-    handleChangeDebuggerData(d) {
-        this.setState({data: this.state.data.setDebuggerData(d)});
+    handleChangeDebuggerData(d, callback) {
+        this.setState({data: this.state.data.setDebuggerData(d)}, callback);
     }
 
     renderLink(mode) {
@@ -128,7 +128,7 @@ export class App extends React.Component {
                     keyboardGrabber: this.state.keyboardGrabber,
                     onMouseGrab: this.handleMouseGrab,
                     onKeyboardGrab: this.handleKeyboardGrab,
-                    onChange: (d) => {this.handleChangeDebuggerData(d)}
+                    onChange: (d, callback) => {this.handleChangeDebuggerData(d, callback)}
                 });
             default:
                 throw new Error("unhandled");

@@ -25,6 +25,36 @@ button, select {
     cursor: pointer;
 }
 
+ul {
+	list-style-type: none;
+}
+
+ul li {
+	margin-left: 10px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table td, table th {
+  border: 1px solid #ddd;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+table tr:first-child th {
+  border-top: 0;
+}
+
+table tr td:first-child, table tr th:first-child {
+  border-left: 0;
+}
+
+table tr td:last-child, table tr th:last-child {
+  border-right: 0;
+}
+
 .sizer {
     z-index: -500;
     opacity: 0;
@@ -265,9 +295,11 @@ span {
 .file-content[error] span.selection {
     text-decoration: underline;
     text-decoration-color: red;
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 1px;
+	text-decoration-style: wavy;
+	text-underline-offset: 5px;
     color: black;
-    background-color: white;
+    background-color: #ffb5b5;
 }
 
 #editor-tab, #debugger-tab {
@@ -375,6 +407,15 @@ button#new-file {
     grid-row-end: 8;
 }
 
+#debugger-tab #debugger .file-content span#caret {
+    position: relative;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 5px;
+}
+
 #debugger-tab #ir-debugger {
     grid-column-start: 1;
     grid-column-end: 9;
@@ -425,6 +466,27 @@ button#new-file {
     grid-row-end: 2;
 }
 
+#debugger-tab button#next {
+    grid-column-start: 10;
+    grid-column-end: 11;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+#debugger-tab button#step-over {
+    grid-column-start: 10;
+    grid-column-end: 11;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
+#debugger-tab button#step-in {
+    grid-column-start: 11;
+    grid-column-end: 12;
+    grid-row-start: 1;
+    grid-row-end: 2;
+}
+
 #debugger-tab #console {
     grid-column-start: 9;
     grid-column-end: 12;
@@ -432,6 +494,11 @@ button#new-file {
     grid-row-end: 8;
     overflow: auto;
     border: 1px solid #ddd;
+	padding: 10px;
+}
+
+#debugger-tab #console .runtime-error-message {
+	color: red;
 }
 
 #debugger-tab #stack {
@@ -442,3 +509,9 @@ button#new-file {
     overflow: auto;
     border: 1px solid #ddd;
 }
+
+
+#debugger-tab #stack table {
+	width: 100%;
+}
+
