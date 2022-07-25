@@ -218,13 +218,21 @@ export class TextEditor extends TextViewer {
                 break;
             case "x":
                 if (e.ctrlKey && data.haveSelection) {
-                    navigator.clipboard.writeText(data.selection);
-                    data = data.deleteSelection(true);
+					if (navigator.clipboard != undefined) {
+						navigator.clipboard.writeText(data.selection);
+						data = data.deleteSelection(true);
+					} else {
+						console.error("clipboard not available");
+					}
                 }
                 break;
             case "c":
                 if (e.ctrlKey && data.haveSelection) {
-                    navigator.clipboard.writeText(data.selection);
+					if (navigator.clipboard != undefined) {
+						navigator.clipboard.writeText(data.selection);
+					} else {
+						console.error("clipboard not available");
+					}
                 }
                 break;
             // paste is captured via special paste event
@@ -290,3 +298,4 @@ export class TextEditor extends TextViewer {
         )
     }
 }
+
