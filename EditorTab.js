@@ -11,12 +11,14 @@ export class EditorTab extends Component {
 
         this.state = {
             lastOK: null, // null -> no check done before 
+			lastOutput: null,
         };
 
         this.handleCreate = this.handleCreate.bind(this);
         this.handleSave = this.handleSave.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
-        this.handleCheck = this.handleCheck.bind(this);
+        this.handleCompile = this.handleCompile.bind(this);
+        this.handleDownload = this.handleDownload.bind(this);
     }
 
     static getDerivedStateFromProps(props, state) {
@@ -62,20 +64,20 @@ export class EditorTab extends Component {
         });
     }
 
-    handleCheck() {
+    handleCompile() {
         let raw = this.data.activeFile.raw;
 
         if (raw != null) {
             try {
-                void helios.compile(raw, {stage: helios.CompilationStage.Untype});
+                let output = helios.compile(raw);
 
-                this.setState({lastOK: raw});
+                this.setState({lastOK: raw, lastOutput: output});
             } catch (e) {
                 if (!(e instanceof helios.UserError)) {
                     throw e;
                 }
 
-                this.setState({lastOK: null});
+                this.setState({lastOK: null, lastOutput: null});
 
                 let newData = this.data.updateActive(fileData => {
                     return TextViewer.scrollErrorToCenter(fileData, e, "error-editor-sizer");
@@ -85,6 +87,24 @@ export class EditorTab extends Component {
             }
         }
     }
+
+	handleDownload() {
+		let output = this.state.lastOutput;
+
+		if (output !== undefined && output !== null && this.props.data.activeFile !== null) {
+			let name = this.props.data.activeFile.name;
+			let blob = new Blob([output], {type: 'text/plain'});
+
+			let link = document.createElement('a');
+			link.style.display = 'none';
+			document.body.appendChild(link);
+			link.href = URL.createObjectURL(blob);
+			link.download = `${name}.hl`;
+			link.click();
+
+			document.body.removeChild(link);
+		}
+	}
 
     render() {
         let files = this.data.getFiles(this.props.onChange);
@@ -124,8 +144,8 @@ export class EditorTab extends Component {
             ce("button", {id: "new-file", onClick: this.handleCreate}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),
             isActive && (wasOK ? 
-                ce("div", {id: "file-is-valid"}, "OK") : 
-                ce("button", {id: "check-file", onClick: this.handleCheck}, "Check")),
+                ce("button", {id: "download", onClick: this.handleDownload}, "Download") : 
+                ce("button", {id: "check-file", onClick: this.handleCompile}, "Compile")),
             dirty && ce("button", {id: "save-file", onClick: this.handleSave}, "Save"),
             isActive && ce("button", {id: "delete-file", onClick: this.handleDelete}, "Delete"),
             wasError && ce("p", {className: "error-message"}, this.data.activeFile.error.message),
