@@ -37,21 +37,29 @@ export class FileData {
         return linesToString(this.lines_);
     }
 
-    // returns empty string if file is technically empty
-    get name() {
+	getPurposeAndName() {
         let raw = this.raw.trim();
 
         if (raw.length == 0) {
-            return "";
+            return ["", ""];
         } else {
             let pair = helios.extractScriptPurposeAndName(raw);
 
             if (pair == null) {
-                return null;
+                return [null, null];
             } else {
-                return pair[1];
+                return pair;
             }
         }
+	}
+
+	get purpose() {
+		return this.getPurposeAndName()[0];
+	}
+
+    // returns empty string if file is empty
+    get name() {
+		return this.getPurposeAndName()[1];
     }
 
     get lines() {
