@@ -116,12 +116,14 @@ export class EditorTab extends Component {
                 caption = name;
             }
 
+			let isActive = key == this.data.activeKey;
+
             let li = ce("li", null, ce("button", {
                 key: key,
                 className: "file-link",
                 "name-error": nameError,
-                active: (key == this.data.activeKey ? "" : null),
-                onClick: () => {this.handleClickFileLink(key)},
+                active: (isActive ? "" : null),
+                onClick: (isActive ? null : () => {this.handleClickFileLink(key)}),
             }, caption));
 
             fileList.push(li);

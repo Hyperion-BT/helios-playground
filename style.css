@@ -144,10 +144,6 @@ table tr td:last-child, table tr th:last-child {
     user-select: none;
 }
 
-.file-link[name-error] {
-    font-style: italic;
-}
-
 .tab-link:hover {
     color: black;
 }
@@ -155,6 +151,19 @@ table tr td:last-child, table tr th:last-child {
 .tab-link[active] {
     color: black;
     cursor: default;
+}
+
+.file-link:hover {
+	color: black;
+}
+
+.file-link[active] {
+	color: black;
+	cursor: default;
+}
+
+.file-link[name-error] {
+    font-style: italic;
 }
 
 .text-editor, .text-viewer {
