@@ -1,8 +1,8 @@
 import {ce, now} from "./util.js";
 import {Component} from "./Component.js";
 
-const BLINK_DELAY = 500; // ms
-const BLINK_INTERVAL = 1000; // ms
+const BLINK_DELAY = 250; // ms
+const BLINK_INTERVAL = 500; // ms
 
 export class Caret extends Component {
     constructor(props) {
