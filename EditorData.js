@@ -32,19 +32,14 @@ export class EditorData extends FileViewerData {
     setActiveFileData(fileData) {
         let that = super.setActiveFileData(fileData);
 
+		// autosave (shoot and forget)
+		this.db_.setFile(this.active_, fileData.raw);
+
         return new EditorData(
             that.db_,
             that.files_,
             that.active_,
         );
-    }
-
-    saveActiveFile() {
-        if (this.files_.has(this.active_)) {
-            let raw = this.files_.get(this.active_).raw;
-
-            return this.db_.setFile(this.active_, raw);
-        }
     }
 
     // doesn't mutate, return Promise<EditorData>

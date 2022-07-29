@@ -15,7 +15,6 @@ export class EditorTab extends Component {
         };
 
         this.handleCreate = this.handleCreate.bind(this);
-        this.handleSave = this.handleSave.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
         this.handleCompile = this.handleCompile.bind(this);
         this.handleDownload = this.handleDownload.bind(this);
@@ -50,13 +49,6 @@ export class EditorTab extends Component {
     handleFileEditorChange(fileData) {
         this.props.onChange(this.data.setActiveFileData(fileData));
     } 
-
-    handleSave() {
-        this.data.saveActiveFile().then(() => {
-            // unnecessary to use this.props.onChange()
-            this.setState({});
-        });
-    }
 
     handleDelete() {
         this.data.deleteActiveFile().then((newData) => {
@@ -136,7 +128,6 @@ export class EditorTab extends Component {
         });
         
         let isActive = this.data.activeKey != null;
-        let dirty = this.data.isActiveDirty;
         let wasOK = isActive && (this.data.activeFile.raw == this.state.lastOK);
         let wasError = isActive && this.data.activeFile.error != null;
 
@@ -149,7 +140,6 @@ export class EditorTab extends Component {
 					ce("div", {id: "file-is-valid"}, "OK")
 				) : 
                 ce("button", {id: "check-file", onClick: this.handleCompile}, "Compile")),
-            dirty && ce("button", {id: "save-file", onClick: this.handleSave}, "Save"),
             isActive && ce("button", {id: "delete-file", onClick: this.handleDelete}, "Delete"),
             wasError && ce("p", {className: "error-message"}, this.data.activeFile.error.message),
             isActive && ce(TextEditor, {
@@ -162,7 +152,6 @@ export class EditorTab extends Component {
                 onMouseGrab: this.props.onMouseGrab,
                 onKeyboardGrab: this.props.onKeyboardGrab,
                 onChange: (data) => {this.handleFileEditorChange(data)},
-                onSave: (dirty ? this.handleSave : null),
             }),
         );
     }

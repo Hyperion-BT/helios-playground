@@ -253,14 +253,6 @@ export class TextEditor extends TextViewer {
                     }
                 }
                 break;
-            case "s":
-                // keep this save here because the file-editor can grab keyboard input, and the parent editor-tab can't
-                if (e.ctrlKey) {
-                    this.handleSave();
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                break;
         }
 
         if (data != this.data) {
@@ -272,14 +264,6 @@ export class TextEditor extends TextViewer {
 
     handlePaste(text) {
         this.props.onChange(this.data.insert(text));
-    }
-
-    handleSave() {
-        if (this.props.onSave != undefined && this.props.onSave != null) {
-            this.props.onSave();
-
-            this.setState({});
-        }
     }
 
     render() {
