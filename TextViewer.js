@@ -1,3 +1,4 @@
+import * as helios from "./external/helios.js";
 import {SPACE, ce, assert, assertClass, formatPaddedInt, findElement, FilePos} from "./util.js";
 import {FileData} from "./FileData.js";
 import {Caret} from "./Caret.js";
@@ -322,89 +323,114 @@ export class TextViewer extends Component {
         return ce("div", {className: "line-number-column", style: {width: this.lineNumberColumnWidth.toString() + "px"}}, lineNumbers);
     }
 
-    renderContentLine(y, text, xCaret, xSelStart, xSelEnd) {
+	renderText(text, highlighting, start, end) {
+		let elems = [];
+
+		let prev = start;
+		let h = highlighting[start];
+
+		for (let i = start+1; i < end; i++) {
+			if (highlighting[i] != h) {
+				elems.push(ce("span", {"c": h.toString()}, text.slice(prev, i)));
+				h = highlighting[i];
+				prev = i;
+			}
+		}
+		
+		if (prev < end) {
+			elems.push(ce("span", {"c": h.toString()}, text.slice(prev, end)));
+		}
+
+		if (elems.length == 0) {
+			elems.push(ce("span", null, ""));
+		}
+
+		return elems;
+	}
+
+    renderContentLine(y, text, highlighting, xCaret, xSelStart, xSelEnd) {
         let inner;
 
         if (xCaret == null) {
             if (xSelStart == null && xSelEnd == null) {
-                inner = [ce("span", null, text)];
+                inner = this.renderText(text, highlighting, 0, text.length);
             } else if (xSelStart == 0 && xSelEnd == text.length) {
                 inner = [ce("span", {className: "selection"}, text)];
             } else if ((xSelStart == null || xSelStart == 0) && xSelEnd != null) {
                 inner = [
                     ce("span", {className: "selection"}, text.slice(0, xSelEnd)),
-                    ce("span", null, text.slice(xSelEnd)),
+                    ...this.renderText(text, highlighting, xSelEnd, text.length),
                 ];
             } else if (xSelStart != null && (xSelEnd == null || xSelEnd == text.length)) {
                 inner = [
-                    ce("span", null, text.slice(0, xSelStart)),
+                    ...this.renderText(text, highlighting, 0, xSelStart),
                     ce("span", {className: "selection"}, text.slice(xSelStart)),
                 ];
             } else if (xSelStart != null && xSelEnd != null) {
                 assert(xSelStart <= xSelEnd);
                 inner = [
-                    ce("span", null, text.slice(0, xSelStart)),
+					...this.renderText(text, highlighting, 0, xSelStart),
                     ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
-                    ce("span", null, text.slice(xSelEnd)),
+					...this.renderText(text, highlighting, xSelEnd, text.length),
                 ];
             } else {
                 throw new Error("unhandled");
             }
         } else if (xSelStart == null && xSelEnd == null) {
             inner = [
-                ce("span", null, text.slice(0, xCaret)),
+				...this.renderText(text, highlighting, 0, xCaret),
                 this.renderCaret(),
-                ce("span", null, text.slice(xCaret)),
+				...this.renderText(text, highlighting, xCaret, text.length),
             ];
         } else if (xCaret == xSelStart && (xSelEnd == null || xSelEnd == text.length)) {
             inner = [
-                ce("span", null, text.slice(0, xCaret)),
+				...this.renderText(text, highlighting, 0, xCaret),
                 this.renderCaret(),
-                ce("span", {className: "selection"}, text.slice(xCaret)),
+                ce("span", {className: "selection"}, text.slice(xSelStart)),
             ];
         } else if (xCaret == xSelStart && xSelEnd != null) {
             inner = [
-                ce("span", null, text.slice(0, xCaret)),
+				...this.renderText(text, highlighting, 0, xCaret),
                 this.renderCaret(),
                 ce("span", {className: "selection"}, text.slice(xCaret, xSelEnd)),
-                ce("span", null, text.slice(xSelEnd)),
+				...this.renderText(text, highlighting, xSelEnd, text.length),
             ];
         } else if (xCaret == xSelEnd && (xSelStart == null || xSelStart == 0)) {
             inner = [
                 ce("span", {className: "selection"}, text.slice(0, xCaret)),
                 this.renderCaret(),
-                ce("span", null, text.slice(xCaret)),
+				...this.renderText(text, highlighting, xCaret, text.length),
             ];
         } else if (xCaret == xSelEnd && xSelStart != null) {
             inner = [
-                ce("span", null, text.slice(0, xSelStart)),
+				...this.renderText(text, highlighting, 0, xSelStart),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xCaret)),
                 this.renderCaret(),
-                ce("span", null, text.slice(xCaret)),
+				...this.renderText(text, highlighting, xCaret, text.length),
             ];
         } else if (xCaret < xSelEnd && xCaret > xSelStart) {
             inner = [
-                ce("span", null, text.slice(0, xSelStart)),
+				...this.renderText(text, highlighting, 0, xSelStart),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xCaret)),
                 this.renderCaret(),
                 ce("span", {className: "selection"}, text.slice(xCaret, xSelEnd)),
-                ce("span", null, text.slice(xSelEnd)),
+				...this.renderText(text, highlighting, xSelEnd, text.length),
             ];
         } else if (xCaret < xSelStart) {
             inner = [
-                ce("span", null, text.slice(0, xCaret)),
+				...this.renderText(text, highlighting, 0, xCaret),
                 this.renderCaret(),
-                ce("span", null, text.slice(xCaret, xSelStart)),
+				...this.renderText(text, highlighting, xCaret, xSelStart),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
-                ce("span", null, text.slice(xSelEnd)),
+				...this.renderText(text, highlighting, xSelEnd, text.length),
             ];
         } else if (xCaret > xSelEnd) {
             inner = [
-                ce("span", null, text.slice(0, xSelStart)),                
+				...this.renderText(text, highlighting, 0, xSelStart),
                 ce("span", {className: "selection"}, text.slice(xSelStart, xSelEnd)),
-                ce("span", null, text.slice(xSelEnd, xCaret)),
+				...this.renderText(text, highlighting, xSelEnd, xCaret),
                 this.renderCaret(),
-                ce("span", null, text.slice(xCaret)),
+				...this.renderText(text, highlighting, xCaret, text.length),
             ];
         } else {
             throw new Error("unhandled");
@@ -430,13 +456,23 @@ export class TextViewer extends Component {
         let caretVisible = this.isGrabbingKeyboard || (this.props.caretVisible !== undefined && this.props.caretVisible !== null);
         let y0 = this.data.viewPos.y;
 
+		let highlighting = helios.highlight(this.data.raw);
+		let highlightPos = 0;
+		for (let y = 0; y < y0; y++) {
+			highlightPos += this.data.lines_[y].length + 1; // include new line char
+		}
+
         for (let y = y0; y < Math.min(y0 + Math.ceil((this.innerHeight + SCROLLBAR_SIZE)/this.lineHeight), this.data.nLines); y++) {
             let line = this.data.lines_[y];
+
+			let lineHighlighting = highlighting.slice(highlightPos, highlightPos + line.length);
+			highlightPos += line.length + 1;
 
             contentLines.push(
                 this.renderContentLine(
                     y,
                     line,
+					lineHighlighting,
                     (caretPos.y == y && caretVisible) ? caretPos.x : null, 
                     selStart.y == y ? selStart.x : (y > selStart.y && y < selEnd.y ? 0 : null),
                     selEnd.y == y ? selEnd.x : (y > selStart.y && y < selEnd.y ? line.length : null),

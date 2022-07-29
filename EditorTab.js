@@ -140,10 +140,6 @@ export class EditorTab extends Component {
         let wasOK = isActive && (this.data.activeFile.raw == this.state.lastOK);
         let wasError = isActive && this.data.activeFile.error != null;
 
-		if (isActive) {
-			console.log(this.data.activeFile.purpose);
-		}
-
         return ce("div", {id: "editor-tab"},
             ce("button", {id: "new-file", onClick: this.handleCreate}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),

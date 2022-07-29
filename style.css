@@ -260,7 +260,7 @@ span {
 
 .line-number-column .line-number {
     width: max-content;
-    background-color: rgb(165, 217, 252);
+    background-color: white;
     color: rgb(102, 102, 102);
 }
 
@@ -300,6 +300,31 @@ span {
 	text-underline-offset: 5px;
     color: black;
     background-color: #ffb5b5;
+}
+
+/* comment */
+.file-content span[c="1"] {
+	color: #9d9d9d;
+}
+
+/* literal */
+.file-content span[c="2"] {
+	color: #a31515;
+}
+
+/* special symbol */
+.file-content span[c="3"] {
+	color: #048800;
+}
+
+/* builtin types */
+.file-content span[c="4"] {
+	color: #ff8f00;
+}
+
+/* keyword */
+.file-content span[c="5"] {
+	color: #0000ff;
 }
 
 #editor-tab, #debugger-tab {

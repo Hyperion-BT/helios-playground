@@ -117,6 +117,8 @@ export class TextEditor extends TextViewer {
                 }
             default:
                 data = data.insert(e.key);
+				e.stopPropagation();
+				e.preventDefault();
                 break;
         }
 
