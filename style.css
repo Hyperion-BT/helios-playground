@@ -9,7 +9,7 @@ body {
     position: relative;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: repeat(12, 1fr);
+    grid-template-rows: 40px repeat(11, 1fr);
     column-gap: 10px;
     row-gap: 10px;
     height: calc(100vh - 20px);
@@ -108,7 +108,7 @@ table tr td:last-child, table tr th:last-child {
     grid-row-end: 13;
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: repeat(12, 1fr);
+    grid-template-rows: 40px repeat(11, 1fr);
     column-gap: 10px;
     row-gap: 10px;
 }
@@ -121,7 +121,7 @@ table tr td:last-child, table tr th:last-child {
 
     display: grid;
     grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: repeat(12, 1fr);
+    grid-template-rows: 40px repeat(11, 1fr);
     column-gap: 10px;
     row-gap: 10px;
 }
@@ -336,6 +336,12 @@ span {
 	color: #0000ff;
 }
 
+/* error */
+.file-content span[c="6"] {
+	color: #ff0000;
+	font-weight: bold;
+}
+
 #editor-tab, #debugger-tab {
     grid-column-start: 2;
     grid-column-end: 13;
@@ -343,7 +349,7 @@ span {
     grid-row-end: 13;
     display: grid;
     grid-template-columns: repeat(11, 1fr);
-    grid-template-rows: repeat(12, 1fr);
+    grid-template-rows: 40px repeat(11, 1fr);
     column-gap: 10px;
     row-gap: 10px;
 }
