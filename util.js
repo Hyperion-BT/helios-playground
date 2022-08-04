@@ -4,6 +4,8 @@ export const TAB = `${SPACE}${SPACE}${SPACE}${SPACE}`;
 
 export const ce = React.createElement;
 
+export const SHARE_URL = "https://3inwm6vv9c.execute-api.us-east-2.amazonaws.com/share-helios-script";
+
 export function now() {
     return (new Date()).getTime();
 }
@@ -73,6 +75,16 @@ export function trimSpaces(line) {
 
 export function isWordChar(c) {
     return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || (c == "_") || (c >= "0" && c <= "9");
+}
+
+// fails silently if  navigator.clipboard isn't defined
+export function setClipboard(txt) {
+	console.log("writing to clipboard");
+	if (navigator.clipboard != undefined) {
+		navigator.clipboard.writeText(txt);
+	} else {
+		console.error("clipboard not available");
+	}
 }
 
 export class Vec {

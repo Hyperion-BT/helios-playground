@@ -1,5 +1,4 @@
 import {ce, assertDefined} from "./util.js";
-import {AppData} from "./AppData.js";
 import {Component} from "./Component.js";
 import {EditorTab} from "./EditorTab.js";
 import {DebuggerTab} from "./DebuggerTab.js";
@@ -15,7 +14,7 @@ export class App extends React.Component {
 
         this.state = {
             mode: AppMode.Edit, // tabs know which mode they are, so doesn't need to be part of data that is passed down to child components
-            data: AppData.new(assertDefined(this.props.db)),
+            data: this.props.data,
             keyboardGrabber: null,
             mouseGrabber: null,
         };

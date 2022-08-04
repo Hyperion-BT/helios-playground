@@ -4,7 +4,7 @@ import {SPACE, TAB, assert, assertDefined, stringToLines, linesToString, trimSpa
 const MAX_HIST = 100;
 
 export class FileData {
-    constructor(lines, selPos0, selPos1, viewPos, error, history, histIdx, histHead) {
+    constructor(lines, selPos0, selPos1, viewPos, error, share, history, histIdx, histHead) {
         assert(!selPos0.isNaN());
         assert(!selPos1.isNaN());
         assert(!viewPos.isNaN());
@@ -13,7 +13,8 @@ export class FileData {
         this.selPos0_ = selPos0; 
         this.selPos1_ = selPos1; // if selPos0 == selPos1 then nothing is selected, selPos1 is the cursor position
         this.viewPos_ = viewPos; // determines scroll position in editor
-        this.error_   = error;
+        this.error_   = error; // compile error
+		this.share_   = share; // share link, or share error (different from compile error)
 
         this.history_  = history; // list of pairs of [lines, caretPos]
         this.histIdx_  = histIdx;
@@ -26,11 +27,12 @@ export class FileData {
         let selPos1 = new FilePos(0, 0);
         let viewPos = new FilePos(0, 0);
         let error   = null;
+		let share   = null;
         let history = [];
         let histIdx = 0;
         let histHead = null;
 
-        return new FileData(lines, selPos0, selPos1, viewPos, error, history, histIdx, histHead);
+        return new FileData(lines, selPos0, selPos1, viewPos, error, share, history, histIdx, histHead);
     }
 
     get raw() {
@@ -127,6 +129,10 @@ export class FileData {
     get error() {
         return this.error_;
     }
+
+	get share() {
+		return this.share_;
+	}
 
     findFirstNonSpace(y) {
         for (let x = 0; x < this.lines_[y].length; x++) {
@@ -227,6 +233,7 @@ export class FileData {
             newPos,
             this.viewPos_,
             isSelecting ? null : this.error_,
+			this.share_,
             this.history_,
             this.histIdx_,
             this.histHead_,
@@ -262,6 +269,7 @@ export class FileData {
             newPos1,
             this.viewPos_,
             null,
+			this.share_,
             this.history_,
             this.histIdx_,
             this.histHead_,
@@ -276,6 +284,7 @@ export class FileData {
             this.selPos1_,
             p,
             this.error_,
+			this.share_,
             this.history_,
             this.histIdx_,
             this.histHead_,
@@ -352,11 +361,26 @@ export class FileData {
             that.selPos1_,
             that.viewPos_,
             error,
+			null,
             that.history_,
             that.histIdx_,
             that.histHead_,
         );
     }
+
+	setShare(share) {
+        return new FileData(
+            this.lines_,
+            this.selPos0_,
+            this.selPos1_,
+            this.viewPos_,
+            this.error_,
+			share,
+            this.history_,
+            this.histIdx_,
+            this.histHead_,
+        );
+	}
 
     // doesn't mutate, returns a new FileData
     pushHistory(lines, caretPos) {
@@ -378,6 +402,7 @@ export class FileData {
             this.selPos1_, 
             this.viewPos_,
             this.error_,
+			this.share_,
             history, 
             histIdx, 
             null,
@@ -405,6 +430,7 @@ export class FileData {
                 newPos, 
                 this.viewPos_,
                 null, 
+				null,
                 this.history_, 
                 histIdx, 
                 histHead,
@@ -439,6 +465,7 @@ export class FileData {
                 newPos, 
                 this.viewPos_,
                 null, 
+				null,
                 this.history_, 
                 histIdx, 
                 histHead,
@@ -473,6 +500,7 @@ export class FileData {
                 newPos, 
                 that.viewPos_,
                 null, 
+				null,
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -513,6 +541,7 @@ export class FileData {
                 p, 
                 that.viewPos_,
                 null, 
+				null,
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -553,6 +582,7 @@ export class FileData {
                 newPos, 
                 that.viewPos_,
                 null, 
+				null,
                 that.history_, 
                 that.histIdx_, 
                 that.histHead_,
@@ -594,6 +624,7 @@ export class FileData {
             newPos, 
             that.viewPos_,
             null, 
+			null,
             that.history_, 
             that.histIdx_, 
             that.histHead_,
@@ -626,6 +657,7 @@ export class FileData {
             newPos1, 
             that.viewPos_,
             null, 
+			null,
             that.history_, 
             that.histIdx_, 
             that.histHead_,
@@ -669,6 +701,7 @@ export class FileData {
             newPos1, 
             that.viewPos_,
             null, 
+			null,
             that.history_, 
             that.histIdx_, 
             that.histHead_,

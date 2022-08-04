@@ -1,4 +1,4 @@
-import {ce, findElement, Vec} from "./util.js";
+import {ce, findElement, Vec, setClipboard} from "./util.js";
 import {SCROLLBAR_SIZE, TextViewer} from "./TextViewer.js";
 
 const TEXT_EDITOR_CLASS = "text-editor";
@@ -230,11 +230,7 @@ export class TextEditor extends TextViewer {
                 break;
             case "c":
                 if (e.ctrlKey && data.haveSelection) {
-					if (navigator.clipboard != undefined) {
-						navigator.clipboard.writeText(data.selection);
-					} else {
-						console.error("clipboard not available");
-					}
+					setClipboard(data.selection);
                 }
                 break;
             // paste is captured via special paste event

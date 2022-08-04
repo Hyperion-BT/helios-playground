@@ -10,8 +10,11 @@ export class AppData {
         this.debuggerData_ = debuggerData;
     }
 
-    static new(db) {
-        return new AppData(assertDefined(db), EditorData.new(db), DebuggerData.new(db));
+    static async new(db, initKey = null) {
+		let editorData = await EditorData.new(db, initKey);
+		let debuggerData = await DebuggerData.new(db);
+
+        return new AppData(db, editorData, debuggerData);
     }
 
     get editorData() {

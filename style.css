@@ -370,7 +370,7 @@ button#new-file {
     border: 1px solid #ddd;
 }
 
-#editor-tab button#check-file {
+#editor-tab button#compile, #editor-tab button#download {
     grid-column-start: 3;
     grid-column-end: 4;
     grid-row-start: 1;
@@ -392,14 +392,43 @@ button#new-file {
     cursor: default;
 }
 
-#editor-tab button#save-file {
+#editor-tab button#share {
+	position: relative;
     grid-column-start: 4;
     grid-column-end: 5;
     grid-row-start: 1;
     grid-row-end: 2;
 }
 
-#editor-tab button#delete-file {
+#editor-tab button#share[disabled] {
+	color: rgba(0, 0, 0, 0);
+}
+
+#editor-tab button#share[disabled]::after {
+	position: absolute;
+	content: "...";
+	color: black;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+#editor-tab div#share-link {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	border-radius: 5px;
+	border: 1px solid #ddd;
+	background-color: #fdfde1;
+	padding: 5px;
+}
+
+#editor-tab button#copy-share-link {
+	margin-left: 10px;
+}
+
+#editor-tab button#delete {
     grid-column-start: 11;
     grid-column-end: 12;
     grid-row-start: 1;

@@ -25,7 +25,7 @@ export class DebuggerData extends FileViewerData {
 		this.waiter_  = waiter;
     }
 
-    static new(db) {
+    static async new(db) {
         return new DebuggerData(
             db, 
             new Map(), 

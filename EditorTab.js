@@ -1,5 +1,5 @@
 import * as helios from "./external/helios.js";
-import {ce, assertClass, FilePos} from "./util.js";
+import {ce, assertClass, setClipboard, FilePos, SHARE_URL} from "./util.js";
 import {EditorData} from "./EditorData.js";
 import {Component} from "./Component.js";
 import {TextViewer} from "./TextViewer.js";
@@ -18,6 +18,8 @@ export class EditorTab extends Component {
         this.handleDelete = this.handleDelete.bind(this);
         this.handleCompile = this.handleCompile.bind(this);
         this.handleDownload = this.handleDownload.bind(this);
+		this.handleShare = this.handleShare.bind(this);
+		this.handleCopyShareLink = this.handleCopyShareLink.bind(this);
     }
 
     static getDerivedStateFromProps(props, state) {
@@ -98,6 +100,63 @@ export class EditorTab extends Component {
 		}
 	}
 
+	// TODO: how to prevent double submit?
+	// TODO: show a dialog with share link, or with error
+	handleShare(e) {
+		e.currentTarget.disabled = true;
+
+		const reject = (msg) => {
+			this.props.onChange(this.data.updateActive(fileData => {
+				return fileData.setShare(new Error(msg));
+			}));
+		};
+
+		const resolve = (link) => {
+			this.props.onChange(this.data.updateActive(fileData => {
+				return fileData.setShare(link);
+			}));
+		};
+
+		let raw = this.data.activeFile.raw;
+
+		const reqObj = {
+			"action": "put",
+			"data": raw,
+		};
+
+		let req = new XMLHttpRequest();
+
+		req.onerror = (e) => {
+			reject("Connection error");
+		};
+
+		req.onload = (_) => {
+			if (req.status == 200) {
+				let respObj = JSON.parse(req.responseText);
+
+				let key = respObj.key;
+
+				if (key === undefined) {
+					reject("Response format error");
+				} else {
+					let link = `${window.location.protocol}//${window.location.host}?share=${key}`;
+					resolve(link);
+				}
+			} else {
+				reject(req.responseText);
+			}
+		};
+
+		req.open("POST", SHARE_URL);
+		req.setRequestHeader("Content-Type", "application/json");
+
+		req.send(JSON.stringify(reqObj));
+	}
+
+	handleCopyShareLink() {
+		setClipboard(this.data.activeFile.share);
+	}
+
     render() {
         let files = this.data.getFiles(this.props.onChange);
 
@@ -141,8 +200,19 @@ export class EditorTab extends Component {
 					ce("button", {id: "download", onClick: this.handleDownload}, "Download") :
 					ce("div", {id: "file-is-valid"}, "OK")
 				) : 
-                ce("button", {id: "check-file", onClick: this.handleCompile}, "Compile")),
-            isActive && ce("button", {id: "delete-file", onClick: this.handleDelete}, "Delete"),
+                ce("button", {id: "compile", onClick: this.handleCompile}, "Compile")),
+			isActive && wasOK && (
+				(this.data.activeFile.share === null ?
+					ce("button", {id: "share", onClick: this.handleShare}, "Share") :
+					(this.data.activeFile.share instanceof Error ?
+						ce("div", {id: "share-error"}, this.data.activeFile.share.message) :
+						ce("div", {id: "share-link"}, 
+							ce("a", null, this.data.activeFile.share),
+						)
+					)
+				)
+			),
+            isActive && ce("button", {id: "delete", onClick: this.handleDelete}, "Delete"),
             wasError && ce("p", {className: "error-message"}, this.data.activeFile.error.message),
             isActive && ce(TextEditor, {
                 id: wasError ? "error-editor" : "editor",

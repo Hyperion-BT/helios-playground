@@ -5,8 +5,16 @@ export class EditorData extends FileViewerData {
         super(db, files, active);
     }
 
-    static new(db) {
-        return new EditorData(db, new Map(), null);
+    static async new(db, initKey = null) {
+        let dbFiles = await db.getFiles();
+
+		let that = (new EditorData(db, new Map(), null)).sync(dbFiles);
+
+		if (initKey !== null) {
+			that = that.setActive(initKey);
+        }
+
+        return that;
     }
 
     sync(dbFiles) {

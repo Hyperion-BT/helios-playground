@@ -329,16 +329,20 @@ export class TextViewer extends Component {
 		let prev = start;
 		let h = highlighting[start];
 
-		for (let i = start+1; i < end; i++) {
-			if (highlighting[i] != h) {
-				elems.push(ce("span", {"c": h.toString()}, text.slice(prev, i)));
-				h = highlighting[i];
-				prev = i;
+		if (h !== undefined) {
+			for (let i = start+1; i < end; i++) {
+				if (highlighting[i] != h) {
+					elems.push(ce("span", {"c": h.toString()}, text.slice(prev, i)));
+					h = highlighting[i];
+					prev = i;
+				}
 			}
-		}
-		
-		if (prev < end) {
-			elems.push(ce("span", {"c": h.toString()}, text.slice(prev, end)));
+			
+			if (prev < end) {
+				if (h !== undefined) {
+					elems.push(ce("span", {"c": h.toString()}, text.slice(prev, end)));
+				}
+			}
 		}
 
 		if (elems.length == 0) {
