@@ -1,4 +1,4 @@
-import * as helios from "./external/helios.js";
+import {helios} from "./helios.js";
 import {SPACE, ce, assert, assertClass, formatPaddedInt, findElement, FilePos} from "./util.js";
 import {FileData} from "./FileData.js";
 import {Caret} from "./Caret.js";

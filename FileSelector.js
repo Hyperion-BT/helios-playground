@@ -14,7 +14,7 @@ export class FileSelector extends Component {
             let name = fileData.name;
 
             // file should at least have a valid name to be an option here
-            if (name != null && name != "" && fileData.purpose == "test") {
+            if (name != null && name != "" && fileData.purpose == "testing") {
                 options.push(ce("option", {value: key}, name));
             }
         }

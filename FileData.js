@@ -1,4 +1,4 @@
-import * as helios from "./external/helios.js";
+import {helios} from "./helios.js";
 import {SPACE, TAB, assert, assertDefined, stringToLines, linesToString, trimSpaces, isWordChar, Vec, FilePos} from "./util.js";
 
 const MAX_HIST = 100;

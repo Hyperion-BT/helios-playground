@@ -1,4 +1,4 @@
-import * as helios from "./external/helios.js";
+import {helios} from "./helios.js";
 import {ce, assertClass, setClipboard, FilePos, SHARE_URL} from "./util.js";
 import {EditorData} from "./EditorData.js";
 import {Component} from "./Component.js";
@@ -63,7 +63,7 @@ export class EditorTab extends Component {
 
         if (raw != null) {
             try {
-                let output = helios.compile(raw);
+                let output = helios.Program.new(raw).compile(true).serialize();
 
                 this.setState({lastOK: raw, lastOutput: output});
             } catch (e) {
@@ -196,7 +196,7 @@ export class EditorTab extends Component {
             ce("button", {id: "new-file", onClick: this.handleCreate}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),
             isActive && (wasOK ? 
-                (this.data.activeFile.purpose != "test" ? 
+                (this.data.activeFile.purpose != "testing" ? 
 					ce("button", {id: "download", onClick: this.handleDownload}, "Download") :
 					ce("div", {id: "file-is-valid"}, "OK")
 				) : 

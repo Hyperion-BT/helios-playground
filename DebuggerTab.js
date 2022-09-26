@@ -54,7 +54,7 @@ export class DebuggerTab extends Component {
 
 	handleStep() {
 		if (this.props.data.isIdle) {
-            this.props.data.program.run({
+            this.props.data.program.run([], {
                 onPrint: (msg) => {
 					return new Promise((resolve, _) => {
 						this.props.onChange(this.props.data.addConsoleMessage(msg), resolve);

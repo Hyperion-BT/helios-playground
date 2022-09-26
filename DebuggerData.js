@@ -1,4 +1,4 @@
-import * as helios from "./external/helios.js";
+import {helios} from "./helios.js";
 import {assert} from "./util.js";
 import {FileData} from "./FileData.js";
 import {FileViewerData} from "./FileViewerData.js";
@@ -154,7 +154,7 @@ export class DebuggerData extends FileViewerData {
             let fileData = this.files_.get(key);
             
             try {
-                let program = helios.compile(fileData.raw, {stage: helios.CompilationStage.PlutusCore});
+                let program = helios.Program.new(fileData.raw).compile();
                 let irSrc = program.src;
 
                 return new DebuggerData(
@@ -312,7 +312,7 @@ export class DebuggerData extends FileViewerData {
 		return that;
     }
 
-    // input pair: [name, helios.PlutusCoreValue]
+    // input pair: [name, helios.UplcValue]
     setStack(pairs) {
         return new DebuggerData(
             this.db_,
