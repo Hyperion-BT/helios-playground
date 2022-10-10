@@ -1,1 +1,1 @@
-export * as helios from "https://hyperion-bt.github.io/Helios/helios.js";
+export * as helios from "https://www.hyperion-bt.org/Helios/helios.js";
