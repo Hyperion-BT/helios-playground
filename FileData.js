@@ -631,6 +631,14 @@ export class FileData {
         );
     }
 
+    currentIndent() {
+        let ind = this.findFirstNonSpace(this.caretPos.y).x;
+
+        console.log('current indent:', ind);
+
+        return ind;
+    }
+
     // doesn't mutate, returns a new FileData
     // updates the history stack
     // TODO: align to TAB boundary

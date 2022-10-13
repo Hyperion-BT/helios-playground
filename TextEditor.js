@@ -1,4 +1,4 @@
-import {ce, findElement, Vec, setClipboard} from "./util.js";
+import {SPACE, ce, findElement, Vec, setClipboard} from "./util.js";
 import {SCROLLBAR_SIZE, TextViewer} from "./TextViewer.js";
 
 const TEXT_EDITOR_CLASS = "text-editor";
@@ -144,11 +144,13 @@ export class TextEditor extends TextViewer {
                 data = data.deleteBackwards();
                 break;
             case "Delete":
-                data = this.data.deleteForwards();
+                data = data.deleteForwards();
                 break;
             case "Enter":
             case "Return":
+                //let ind = data.currentIndent();
                 data = data.insert("\n");
+                //data = data.insert((new Array(ind)).fill(SPACE).join("")); // very crude 'auto-indent' that doesn't really work
                 break;
             case "ArrowLeft":
                 if (!e.shiftKey && data.haveSelection) {
