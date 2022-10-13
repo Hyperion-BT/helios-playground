@@ -370,16 +370,32 @@ button#new-file {
     border: 1px solid #ddd;
 }
 
-#editor-tab button#compile, #editor-tab button#download {
+#editor-tab div.simplify-wrapper {
     grid-column-start: 3;
     grid-column-end: 4;
+    grid-row-start: 1;
+    grid-row-end: 2;
+
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+#editor-tab button#compile, #editor-tab button#download {
+    grid-column-start: 4;
+    grid-column-end: 5;
     grid-row-start: 1;
     grid-row-end: 2;
 }
 
 #editor-tab div#file-is-valid {
-    grid-column-start: 3;
-    grid-column-end: 4;
+    grid-column-start: 4;
+    grid-column-end: 5;
     grid-row-start: 1;
     grid-row-end: 2;
     color: green;
@@ -394,8 +410,8 @@ button#new-file {
 
 #editor-tab button#share {
 	position: relative;
-    grid-column-start: 4;
-    grid-column-end: 5;
+    grid-column-start: 5;
+    grid-column-end: 6;
     grid-row-start: 1;
     grid-row-end: 2;
 }

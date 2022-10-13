@@ -12,6 +12,7 @@ export class EditorTab extends Component {
         this.state = {
             lastOK: null, // null -> no check done before 
 			lastOutput: null,
+            simplify: true,
         };
 
         this.handleCreate = this.handleCreate.bind(this);
@@ -63,7 +64,7 @@ export class EditorTab extends Component {
 
         if (raw != null) {
             try {
-                let output = helios.Program.new(raw).compile(true).serialize();
+                let output = helios.Program.new(raw).compile(this.state.simplify).serialize();
 
                 this.setState({lastOK: raw, lastOutput: output});
             } catch (e) {
@@ -191,16 +192,25 @@ export class EditorTab extends Component {
         let isActive = this.data.activeKey != null;
         let wasOK = isActive && (this.data.activeFile.raw == this.state.lastOK);
         let wasError = isActive && this.data.activeFile.error != null;
+        let simplify = this.state.simplify;
 
         return ce("div", {id: "editor-tab"},
             ce("button", {id: "new-file", onClick: this.handleCreate}, "New"),
             ce("nav", {id: "file-overview"}, ce("ul", null, ...fileList)),
-            isActive && (wasOK ? 
+            isActive && (
+                ce("div", {className: "simplify-wrapper"}, 
+                        ce("label", {htmlFor: "simplify"}, "Simplify output"),
+                        ce("input", {id: "simplify", type: "checkbox", checked: simplify, onChange: (e) => {this.setState({lastOK: "", simplify: e.target.checked})}})
+                )
+            ),
+            isActive && (
+                wasOK ? 
                 (this.data.activeFile.purpose != "testing" ? 
 					ce("button", {id: "download", onClick: this.handleDownload}, "Download") :
 					ce("div", {id: "file-is-valid"}, "OK")
 				) : 
-                ce("button", {id: "compile", onClick: this.handleCompile}, "Compile")),
+                ce("button", {id: "compile", onClick: this.handleCompile}, "Compile")
+            ),
 			isActive && wasOK && (
 				(this.data.activeFile.share === null ?
 					ce("button", {id: "share", onClick: this.handleShare}, "Share") :

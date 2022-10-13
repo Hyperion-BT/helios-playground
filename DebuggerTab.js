@@ -117,7 +117,7 @@ export class DebuggerTab extends Component {
                     onChange: (data) => {this.handleChangeFileView(data)},
                 }));
 
-                children.push(ce("p", {className: "error-message"}, this.props.data.error.message));
+				children.push(ce("p", {className: "error-message"}, this.props.data.error.message));
             } else if (this.props.data.ir != null) {
                 children.push(ce(TextViewer, {
                     id: "debugger",
@@ -147,7 +147,7 @@ export class DebuggerTab extends Component {
 
                 children.push(ce("div", {id: "console"}, this.props.data.console.map((msg, i) => {
 					if (msg instanceof Error) {
-						return ce("p", {key: i, className: "runtime-error-message"}, msg.message);
+						return msg.message.split("\n").map(part => ce("p", {key: part, className: "runtime-error-message"}, part));
 					} else {
 						return ce("p", {key: i, className: "message"}, msg);
 					}
