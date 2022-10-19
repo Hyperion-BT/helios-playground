@@ -140,7 +140,7 @@ export class EditorTab extends Component {
 				if (key === undefined) {
 					reject("Response format error");
 				} else {
-					let link = `${window.location.protocol}//${window.location.host}?share=${key}`;
+					let link = `${window.location.protocol}//${window.location.host}${window.location.pathname}?share=${key}`;
 					resolve(link);
 				}
 			} else {
